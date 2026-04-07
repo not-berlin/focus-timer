@@ -7,7 +7,13 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
+  @font-face {
+  font-family: 'SF Pro';
+  src: url('SF-Pro.woff2') format('woff2-variations');
+  /* Khai báo dải giá trị để trình duyệt chuẩn bị tinh thần */
+  font-weight: 100 900;
+  font-stretch: 50% 200%;
+}
   :root {
     --bg: #0a0a0a;
     --surface: rgba(255,255,255,0.04);
@@ -143,6 +149,8 @@
   }
 
   #mode-label {
+    font-family: 'SF Pro';
+    font-variation-settings: 'wdth' 132, 'opsz' 28, 'wght' 410;
     font-size: 11px;
     letter-spacing: 0.2em;
     text-transform: uppercase;
@@ -152,7 +160,8 @@
   }
 
   #time-display {
-    font-family: 'DM Mono', monospace;
+    font-family: 'SF Pro', monospace;
+    font-variation-settings: 'wdth' 132, 'opsz' 28, 'wght' 410;
     font-size: clamp(72px, 12vw, 140px);
     font-weight: 300;
     line-height: 1;
