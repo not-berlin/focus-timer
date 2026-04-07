@@ -7,6 +7,9 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  * {
+    text-transform: lowercase !important;
+  }
   @font-face {
   font-family: 'SF Pro';
   src: url('SF-Pro.woff2') format('woff2-variations');
@@ -434,6 +437,7 @@
   #notes-panel.open { display: flex; }
 
   #notes-area {
+    text-transform: none !important;
     flex: 1;
     background: transparent;
     border: none;
