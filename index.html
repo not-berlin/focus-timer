@@ -611,6 +611,25 @@
     0%, 100% { opacity: 1; }
     50% { opacity: 0.6; }
   }
+  /* Chế độ Zen */
+  body.zen-active #nav,
+  body.zen-active #bottom-left,
+  body.zen-active #controls,
+  body.zen-active #pomo-dots,
+  body.zen-active #sub-label,
+  body.zen-active #btn-settings {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+  }
+
+  /* Giữ nút Zen mờ đi một chút để còn biết đường mà tắt */
+  body.zen-active #btn-zen {
+    opacity: 0.2;
+  }
+  body.zen-active #btn-zen:hover {
+    opacity: 1;
+  }
 </style>
 </head>
 <body>
@@ -661,6 +680,7 @@
 <!-- Bottom Right Settings -->
 <div id="bottom-right">
   <div class="tool-btn" id="btn-settings" onclick="togglePanel('settings-panel', this)" title="Cài đặt">⚙</div>
+  <div class="tool-btn" id="btn-zen" onclick="toggleZen()" title="Chế độ tập trung tối đa">⛶</div>
 </div>
 
 <!-- BG Panel -->
@@ -1278,7 +1298,37 @@ function showNotif(icon, title, msg) {
 function dismissNotif() {
   document.getElementById('notification').classList.remove('show');
 }
+function toggleZen() {
+  const isZen = document.body.classList.toggle('zen-active');
+  const btn = document.getElementById('btn-zen');
 
+  if (isZen) {
+    // Kích hoạt toàn màn hình
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen();
+    } else if (document.documentElement.webkitRequestFullscreen) { /* Safari */
+      document.documentElement.webkitRequestFullscreen();
+    }
+    btn.textContent = '✕'; // Đổi icon thành dấu X để thoát
+    closeAllPanels();
+  } else {
+    // Thoát toàn màn hình
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    }
+    btn.textContent = '⛶'; // Trả lại icon cũ
+  }
+}
+
+// Lắng nghe sự kiện thoát Fullscreen bằng phím Esc để đồng bộ lại UI
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement) {
+    document.body.classList.remove('zen-active');
+    document.getElementById('btn-zen').textContent = '⛶';
+  }
+});
 // Init
 render();
 </script>
