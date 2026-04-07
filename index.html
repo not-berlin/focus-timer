@@ -1190,23 +1190,33 @@ function loadYT() {
   const url = document.getElementById('yt-url-input').value.trim();
   if (!url) return;
   
-  let id = '';
-  // Regex này "lợi hại" hơn, bắt được nhiều loại link hơn
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-  const match = url.match(regExp);
+  let src = '';
+  const iframe = document.getElementById('yt-iframe');
+  const wrap = document.getElementById('yt-frame-wrap');
+
+  // 1. Kiểm tra nếu là Playlist
+  const listMatch = url.match(/[?&]list=([^#&?]+)/);
   
-  if (match && match[2].length === 11) {
-    id = match[2];
+  if (listMatch) {
+    const listId = listMatch[1];
+    src = `https://www.youtube.com/embed/videoseries?list=${listId}&autoplay=1&enablejsapi=1`;
   } else {
-    alert('Link này có vẻ "lạ" quá, kiểm tra lại giúp mình nhé.');
-    return;
+    // 2. Nếu là Video đơn lẻ
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    
+    if (match && match[2].length === 11) {
+      const videoId = match[2];
+      // Mẹo: Thêm loop=1 và playlist=[ID] để nó tự phát lại bài đó mãi mãi
+      src = `https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}&enablejsapi=1`;
+    } else {
+      alert('Link này "lạ" quá, mình không nhận diện được. Thử link khác xem sao.');
+      return;
+    }
   }
 
-  const wrap = document.getElementById('yt-frame-wrap');
-  const iframe = document.getElementById('yt-iframe');
-  
-  // Thêm tham số enablejsapi=1 và origin để lách luật một số trình duyệt
-  iframe.src = `https://www.youtube.com/embed/${id}?autoplay=1&enablejsapi=1&origin=${window.location.origin}`;
+  // Thêm origin để tránh lỗi bảo mật nếu bạn chạy trên server
+  iframe.src = src + `&origin=${window.location.origin}`;
   wrap.classList.add('visible');
 }
 
