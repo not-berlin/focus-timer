@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Focus — Hẹn giờ tập trung</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0a;
+    --surface: rgba(255,255,255,0.04);
+    --border: rgba(255,255,255,0.08);
+    --text: rgba(255,255,255,0.92);
+    --muted: rgba(255,255,255,0.4);
+    --accent: #e8d5b0;
+    --accent2: #a8c4b8;
+    --danger: #c97b6e;
+    --focus-blur: 8px;
+    --focus-dim: 0.55;
+    --overlay-blur: 12px;
+    --overlay-dim: 0.7;
+  }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Instrument Sans', sans-serif;
+    font-weight: 300;
+  }
+
+  #bg-layer {
+    position: fixed; inset: 0;
+    background: #0a0a0a;
+    background-size: cover;
+    background-position: center;
+    transition: filter 1.2s ease, opacity 1.2s ease;
+    z-index: 0;
+  }
+
+  #bg-layer::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.45);
+    transition: background 1.2s ease;
+  }
+
+  #bg-layer.focused::after {
+    background: rgba(0,0,0,var(--focus-dim));
+  }
+
+  #bg-layer.focused {
+    filter: blur(var(--focus-blur));
+  }
+
+  #app {
+    position: fixed; 
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column; /* Đổi sang column để dễ điều khiển vị trí dọc */
+    align-items: center;
+    justify-content: flex-start; /* Bắt đầu từ trên cùng */
+    pointer-events: none;
+  }
+
+  #clock-display {
+    position: relative;
+    /* Vị trí mặc định ban đầu là 50% màn hình */
+    top: 50%; 
+    transform: translateY(-50%);
+    text-align: center;
+    user-select: none;
+  }
+
+  #app > * { pointer-events: all; }
+
+  /* ── NAV ── */
+  #nav {
+    position: fixed; top: 28px; left: 32px;
+    display: flex; gap: 6px;
+    align-items: center;
+    z-index: 10;
+    pointer-events: all;
+  }
+
+  .nav-btn {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--muted);
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 7px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .nav-btn:hover { color: var(--text); background: rgba(255,255,255,0.1); }
+  .nav-btn.active {
+    background: rgba(232,213,176,0.15);
+    border-color: rgba(232,213,176,0.35);
+    color: var(--accent);
+  }
+
+  /* ── QUOTES ── */
+  #quote-box {
+    position: fixed; top: 28px; right: 32px;
+    max-width: 280px;
+    text-align: right;
+    z-index: 10;
+    pointer-events: all;
+  }
+
+  #quote-text {
+    font-family: 'DM Serif Display', serif;
+    font-style: italic;
+    font-size: 14px;
+    line-height: 1.6;
+    color: rgba(255,255,255,0.55);
+    transition: opacity 0.6s;
+  }
+
+  #quote-author {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.28);
+    margin-top: 6px;
+  }
+
+  /* ── CLOCK CENTER ── */
+  #clock-display {
+    text-align: center;
+    user-select: none;
+  }
+
+  #mode-label {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+    height: 16px;
+  }
+
+  #time-display {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(72px, 12vw, 140px);
+    font-weight: 300;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    transition: color 0.3s;
+  }
+
+  #time-display.running { color: var(--accent); }
+  #time-display.warning { color: var(--danger); }
+
+  #sub-label {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-top: 14px;
+    height: 18px;
+    text-transform: uppercase;
+  }
+
+  /* pomodoro dots */
+  #pomo-dots {
+    display: flex; gap: 8px;
+    justify-content: center;
+    margin-top: 18px;
+    height: 20px;
+  }
+
+  .pomo-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    border: 1px solid rgba(232,213,176,0.4);
+    background: transparent;
+    transition: background 0.3s;
+  }
+
+  .pomo-dot.done { background: var(--accent); border-color: var(--accent); }
+
+  /* controls */
+  #controls {
+    display: flex; gap: 12px;
+    justify-content: center;
+    margin-top: 32px;
+    height: 44px;
+    align-items: center;
+  }
+
+  .ctrl-btn {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.7);
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    padding: 9px 24px;
+    border-radius: 22px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+  }
+
+  .ctrl-btn:hover { background: rgba(255,255,255,0.12); color: var(--text); }
+
+  .ctrl-btn.primary {
+    background: rgba(232,213,176,0.12);
+    border-color: rgba(232,213,176,0.3);
+    color: var(--accent);
+  }
+
+  .ctrl-btn.primary:hover { background: rgba(232,213,176,0.2); }
+
+  /* ── COUNTDOWN INPUT ── */
+  #countdown-input {
+    display: flex; gap: 8px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 24px;
+  }
+
+  .time-input {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 18px;
+    font-weight: 300;
+    text-align: center;
+    width: 64px;
+    padding: 8px 4px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .time-input:focus { border-color: rgba(232,213,176,0.4); }
+  .time-sep { color: var(--muted); font-size: 20px; font-family: 'DM Mono', monospace; }
+
+  /* ── BOTTOM LEFT TOOLS ── */
+  #bottom-left {
+    position: fixed; bottom: 28px; left: 32px;
+    display: flex; gap: 8px;
+    align-items: flex-end;
+    z-index: 10;
+    pointer-events: all;
+  }
+
+  .tool-btn {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--muted);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 17px;
+  }
+
+  .tool-btn:hover { background: rgba(255,255,255,0.12); color: var(--text); }
+  .tool-btn.active { background: rgba(168,196,184,0.15); border-color: rgba(168,196,184,0.35); color: var(--accent2); }
+
+  /* ── BOTTOM RIGHT SETTINGS ── */
+  #bottom-right {
+    position: fixed; bottom: 28px; right: 32px;
+    z-index: 10;
+    pointer-events: all;
+  }
+
+  /* ── PANELS ── */
+  .panel {
+    position: fixed;
+    background: rgba(12,12,14,0.88);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 18px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 20px;
+    z-index: 20;
+    display: none;
+    pointer-events: all;
+  }
+
+  .panel.open { display: block; }
+
+  .panel-title {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .panel-close {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    transition: all 0.2s;
+  }
+
+  .panel-close:hover { background: rgba(255,255,255,0.15); color: var(--text); }
+
+  /* BG Panel */
+  #bg-panel {
+    bottom: 80px; left: 32px;
+    width: 280px;
+  }
+
+  #drop-zone {
+    border: 1.5px dashed rgba(255,255,255,0.15);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 1.6;
+  }
+
+  #drop-zone:hover, #drop-zone.dragover {
+    border-color: rgba(168,196,184,0.4);
+    background: rgba(168,196,184,0.05);
+    color: var(--accent2);
+  }
+
+  #bg-url-input {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 13px;
+    padding: 9px 12px;
+    outline: none;
+    margin-top: 10px;
+    transition: border-color 0.2s;
+  }
+
+  #bg-url-input:focus { border-color: rgba(168,196,184,0.4); }
+  #bg-url-input::placeholder { color: var(--muted); }
+
+  .small-btn {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--muted);
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 12px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .small-btn:hover { background: rgba(255,255,255,0.12); color: var(--text); }
+
+  /* Music Panel */
+  #music-panel {
+    bottom: 80px; left: 32px;
+    width: 300px;
+  }
+
+  #yt-url-input {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 13px;
+    padding: 9px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 10px;
+  }
+
+  #yt-url-input:focus { border-color: rgba(232,213,176,0.4); }
+  #yt-url-input::placeholder { color: var(--muted); }
+
+  #yt-frame-wrap {
+    border-radius: 10px;
+    overflow: hidden;
+    background: #000;
+    display: none;
+  }
+
+  #yt-frame-wrap.visible { display: block; }
+  #yt-frame-wrap iframe { width: 100%; height: 160px; border: none; display: block; }
+
+  /* Notes Panel */
+  #notes-panel {
+    bottom: 80px; left: 32px;
+    width: 320px;
+    max-height: 420px;
+    display: none;
+    flex-direction: column;
+  }
+
+  #notes-panel.open { display: flex; }
+
+  #notes-area {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 300;
+    line-height: 1.7;
+    resize: none;
+    outline: none;
+    min-height: 200px;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+
+  #notes-area::placeholder { color: rgba(255,255,255,0.2); }
+  #notes-area::-webkit-scrollbar { width: 4px; }
+  #notes-area::-webkit-scrollbar-track { background: transparent; }
+  #notes-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+  .notes-meta {
+    font-size: 11px;
+    color: rgba(255,255,255,0.2);
+    text-align: right;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+
+  /* Settings Panel */
+  #settings-panel {
+    bottom: 80px; right: 32px;
+    width: 290px;
+  }
+
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+
+  .setting-label {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+  }
+
+  .setting-sublabel {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .slider-wrap {
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100px; height: 3px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+  }
+
+  .slider-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    min-width: 30px;
+    text-align: right;
+  }
+
+  .setting-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.06);
+    margin: 12px 0 18px;
+  }
+
+  /* ── NOTIFICATION ── */
+  #notification {
+    position: fixed; inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    pointer-events: all;
+  }
+
+  #notification.show { display: flex; }
+
+  .notif-card {
+    background: rgba(16,16,18,0.92);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 24px;
+    padding: 40px 48px;
+    text-align: center;
+    max-width: 380px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes popIn {
+    from { transform: scale(0.85); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .notif-icon { font-size: 44px; margin-bottom: 16px; }
+
+  .notif-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+
+  .notif-msg {
+    font-size: 14px;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.7;
+    margin-bottom: 24px;
+  }
+
+  #notif-dismiss {
+    background: rgba(232,213,176,0.12);
+    border: 1px solid rgba(232,213,176,0.3);
+    color: var(--accent);
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 13px;
+    padding: 10px 28px;
+    border-radius: 22px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+  }
+
+  #notif-dismiss:hover { background: rgba(232,213,176,0.2); }
+
+  /* ── POMO break badge ── */
+  #break-badge {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) translateY(90px);
+    background: rgba(168,196,184,0.12);
+    border: 1px solid rgba(168,196,184,0.3);
+    color: var(--accent2);
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 20px;
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  #file-input { display: none; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+
+  /* Transition helpers */
+  .fade-enter { animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .pulse { animation: pulse 2s infinite; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div id="bg-layer"></div>
+
+<!-- Nav -->
+<nav id="nav">
+  <button class="nav-btn active" onclick="switchMode('clock')">Giờ hiện tại</button>
+  <button class="nav-btn" onclick="switchMode('countdown')">Đếm ngược</button>
+  <button class="nav-btn" onclick="switchMode('pomodoro')">Pomodoro</button>
+</nav>
+
+<!-- Quotes -->
+<div id="quote-box">
+  <div id="quote-text"></div>
+  <div id="quote-author"></div>
+</div>
+
+<!-- Center Clock -->
+<div id="app">
+  <div id="clock-display">
+    <div id="time-display">00:00</div>
+    <div id="mode-label"></div>
+    <div id="sub-label"></div>
+    <div id="pomo-dots"></div>
+    <div id="countdown-input" style="display:none;">
+      <input type="number" class="time-input" id="input-h" min="0" max="23" value="0" placeholder="00">
+      <span class="time-sep">:</span>
+      <input type="number" class="time-input" id="input-m" min="0" max="59" value="25" placeholder="00">
+      <span class="time-sep">:</span>
+      <input type="number" class="time-input" id="input-s" min="0" max="59" value="0" placeholder="00">
+    </div>
+    <div id="controls"></div>
+  </div>
+</div>
+
+<div id="break-badge">Giải lao</div>
+
+<!-- Bottom Left Tools -->
+<div id="bottom-left">
+  <div class="tool-btn" id="btn-bg" onclick="togglePanel('bg-panel', this)" title="Đổi hình nền">🖼</div>
+  <div class="tool-btn" id="btn-music" onclick="togglePanel('music-panel', this)" title="Nhạc YouTube">🎵</div>
+  <div class="tool-btn" id="btn-notes" onclick="togglePanel('notes-panel', this)" title="Ghi chú">📝</div>
+</div>
+
+<!-- Bottom Right Settings -->
+<div id="bottom-right">
+  <div class="tool-btn" id="btn-settings" onclick="togglePanel('settings-panel', this)" title="Cài đặt">⚙</div>
+</div>
+
+<!-- BG Panel -->
+<div class="panel" id="bg-panel">
+  <div class="panel-title">
+    Hình nền
+    <button class="panel-close" onclick="closePanel('bg-panel','btn-bg')">✕</button>
+  </div>
+  <div id="drop-zone" onclick="document.getElementById('file-input').click()"
+       ondragover="event.preventDefault();this.classList.add('dragover')"
+       ondragleave="this.classList.remove('dragover')"
+       ondrop="handleDrop(event)">
+    Kéo thả ảnh vào đây<br>
+    <span style="font-size:11px;opacity:0.6">hoặc nhấn để chọn từ máy</span>
+  </div>
+  <input type="file" id="file-input" accept="image/*" onchange="handleFileInput(event)">
+  <input type="text" id="bg-url-input" placeholder="Hoặc dán link ảnh vào đây…" onkeydown="if(event.key==='Enter')applyBgUrl()">
+  <button class="small-btn" onclick="applyBgUrl()">Áp dụng link</button>
+  <button class="small-btn" onclick="clearBg()" style="margin-top:6px;opacity:0.5">Xóa hình nền</button>
+</div>
+
+<!-- Music Panel -->
+<div class="panel" id="music-panel">
+  <div class="panel-title">
+    Nhạc nền
+    <button class="panel-close" onclick="closePanel('music-panel','btn-music')">✕</button>
+  </div>
+  <input type="text" id="yt-url-input" placeholder="Dán link YouTube vào đây…" onkeydown="if(event.key==='Enter')loadYT()">
+  <button class="small-btn" onclick="loadYT()">Phát nhạc</button>
+  <div id="yt-frame-wrap" style="margin-top:10px;">
+    <iframe id="yt-iframe" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+  </div>
+</div>
+
+<!-- Notes Panel -->
+<div class="panel" id="notes-panel">
+  <div class="panel-title">
+    Ghi chú
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <button class="panel-close" onclick="exportNotes()" title="Xuất file .txt" style="border-radius: 25px; font-family: sans-serif; background: rgba(168,196,184,0.15); color: var(--accent2); font-size: 12px; width: auto; padding: 0 8px; border-radius: 4px;">Tải về</button>
+      <button class="panel-close" onclick="closePanel('notes-panel','btn-notes')">✕</button>
+    </div>
+  </div>
+  <textarea id="notes-area" placeholder="Gõ gì đó vào đây…&#10;Cứ tự nhiên như đang nghĩ thôi." oninput="saveNotes()"></textarea>
+  <div class="notes-meta" id="notes-meta">0 từ</div>
+</div>
+
+<!-- Settings Panel -->
+<div class="panel" id="settings-panel">
+  <div class="panel-title">
+    Cài đặt
+    <button class="panel-close" onclick="closePanel('settings-panel','btn-settings')">✕</button>
+  </div>
+
+  <div class="setting-row">
+    <div>
+      <div class="setting-label">Pomodoro — Tập trung</div>
+      <div class="setting-sublabel">phút</div>
+    </div>
+    <div class="slider-wrap">
+      <input type="range" min="-90" max="90" value="0" id="s-pomo-work" oninput="updateSetting('pomo-work',this.value)" step="5">
+      <span class="slider-val" id="v-pomo-work">25</span>
+    </div>
+  </div>
+
+  <div class="setting-row">
+    <div>
+      <div class="setting-label">Pomodoro — Nghỉ</div>
+      <div class="setting-sublabel">phút</div>
+    </div>
+    <div class="slider-wrap">
+      <input type="range" min="-90" max="90" value="0" id="s-pomo-break" oninput="updateSetting('pomo-break',this.value)" step="1">
+      <span class="slider-val" id="v-pomo-break">5</span>
+    </div>
+  </div>
+
+  <div class="setting-row">
+    <div>
+      <div class="setting-label">Pomodoro dài nghỉ</div>
+      <div class="setting-sublabel">phút (sau 4 hiệp)</div>
+    </div>
+    <div class="slider-wrap">
+      <input type="range" min="-90" max="90" value="0" id="s-pomo-long" oninput="updateSetting('pomo-long',this.value)" step="5">
+      <span class="slider-val" id="v-pomo-long">15</span>
+    </div>
+  </div>
+
+  <div class="setting-divider"></div>
+
+  <div class="setting-row">
+    <div>
+      <div class="setting-label">Độ mờ khi chạy</div>
+      <div class="setting-sublabel">blur nền</div>
+    </div>
+    <div class="slider-wrap">
+      <input type="range" min="0" max="20" value="8" id="s-blur" oninput="updateSetting('blur',this.value)">
+      <span class="slider-val" id="v-blur">8px</span>
+    </div>
+  </div>
+
+  <div class="setting-row">
+    <div>
+      <div class="setting-label">Độ tối khi chạy</div>
+      <div class="setting-sublabel">dim nền</div>
+    </div>
+    <div class="slider-wrap">
+      <input type="range" min="0.2" max="0.9" value="0.55" id="s-dim" oninput="updateSetting('dim',this.value)" step="0.05">
+      <span class="slider-val" id="v-dim">55%</span>
+    </div>
+  </div>
+
+  <div class="setting-divider"></div>
+
+  <div class="setting-row">
+    <div>
+      <div class="setting-label">Vị trí đồng hồ</div>
+      <div class="setting-sublabel">từ giữa xuống</div>
+    </div>
+    <div class="slider-wrap">
+      <input type="range" min="-15" max="15" value="0" id="s-offset" oninput="updateSetting('offset',this.value)" step="1">
+      <span class="slider-val" id="v-offset">0%</span>
+    </div>
+  </div>
+</div>
+
+<!-- Notification -->
+<div id="notification">
+  <div class="notif-card">
+    <div class="notif-icon" id="notif-icon">✦</div>
+    <div class="notif-title" id="notif-title">Xong rồi!</div>
+    <div class="notif-msg" id="notif-msg"></div>
+    <button id="notif-dismiss" onclick="dismissNotif()">Tiếp tục thôi</button>
+  </div>
+</div>
+
+<script>
+const QUOTES = [
+  { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+  { text: "You don't have to see the whole staircase, just take the first step.", author: "Martin Luther King Jr." },
+  { text: "Focus on being productive instead of busy.", author: "Tim Ferriss" },
+  { text: "It's not that I'm so smart, it's just that I stay with problems longer.", author: "Albert Einstein" },
+  { text: "Energy and persistence conquer all things.", author: "Benjamin Franklin" },
+  { text: "Done is better than perfect.", author: "Sheryl Sandberg" },
+  { text: "The mind is everything. What you think you become.", author: "Buddha" },
+  { text: "Concentrate all your thoughts upon the work in hand.", author: "Alexander Graham Bell" },
+  { text: "Do the hard jobs first. The easy jobs will take care of themselves.", author: "Dale Carnegie" },
+  { text: "Either you run the day, or the day runs you.", author: "Jim Rohn" },
+  { text: "Simplicity is the ultimate sophistication.", author: "Leonardo da Vinci" },
+  { text: "The way to get started is to quit talking and begin doing.", author: "Walt Disney" },
+  { text: "Action is the foundational key to all success.", author: "Pablo Picasso" },
+  { text: "Your time is limited, don't waste it living someone else's life.", author: "Steve Jobs" },
+  { text: "I am not a product of my circumstances. I am a product of my decisions.", author: "Stephen Covey" },
+  { text: "Deep work is the ability to focus without distraction on a cognitively demanding task.", author: "Cal Newport" },
+  { text: "You will never find time for anything. If you want time, you must make it.", author: "Charles Buxton" },
+  { text: "The most important thing is to try and inspire people.", author: "Kobe Bryant" },
+  { text: "Absorb what is useful, discard what is useless.", author: "Bruce Lee" },
+  { text: "Be so good they can't ignore you.", author: "Steve Martin" },
+];
+
+const POMO_MSGS = [
+  "Một hiệp nữa đã qua — tâm trí tỉnh như sương mai.",
+  "Sóng sau đè sóng trước — bạn vừa vượt qua một hiệp.",
+  "Mỗi giọt tập trung là một viên đá xây nền.",
+  "Dừng lại một chút. Hít thở. Rồi tiếp tục.",
+  "Bạn vừa hoàn thành một hiệp pomodoro — không phải ai cũng làm được.",
+];
+
+const COMPLETE_MSGS = [
+  "Mọi thứ đã xong — cái khoảnh khắc này là của bạn.",
+  "Tâm trí đã đi qua, và trở về trong lành hơn.",
+  "Xong. Đơn giản vậy thôi — và đó là điều tuyệt vời nhất.",
+  "Bạn đã chứng minh được điều gì đó cho chính mình.",
+  "Giờ là lúc thở. Bạn xứng đáng với khoảnh khắc này.",
+];
+
+const POMO_ICONS = ["✦", "◈", "⬡", "✧", "◇"];
+
+let mode = 'clock';
+let running = false;
+let totalSecs = 0;
+let currentSecs = 0;
+let timerInterval = null;
+let clockInterval = null;
+let quoteInterval = null;
+let quoteIdx = 0;
+let pomoSession = 0; // 0=work, 1=break, 2=long break
+let pomoCount = 0;
+
+const settings = {
+  'pomo-work': 25,
+  'pomo-break': 5,
+  'pomo-long': 15,
+  blur: 8,
+  dim: 0.55,
+  offset: 0,
+};
+
+function pad(n) { return String(n).padStart(2,'0'); }
+
+// ── QUOTES ──
+function showQuote() {
+  const q = QUOTES[quoteIdx % QUOTES.length];
+  const el = document.getElementById('quote-text');
+  el.style.opacity = 0;
+  setTimeout(() => {
+    document.getElementById('quote-text').textContent = '"' + q.text + '"';
+    document.getElementById('quote-author').textContent = '— ' + q.author;
+    el.style.opacity = 1;
+  }, 400);
+  quoteIdx++;
+}
+
+showQuote();
+quoteInterval = setInterval(showQuote, 18000);
+
+// ── MODE SWITCH ──
+function switchMode(m) {
+  stop();
+  mode = m;
+  document.querySelectorAll('.nav-btn').forEach((b,i) => {
+    b.classList.toggle('active', ['clock','countdown','pomodoro'][i] === m);
+  });
+  closeAllPanels();
+  render();
+}
+
+function render() {
+  const lbl = document.getElementById('mode-label');
+  const sub = document.getElementById('sub-label');
+  const ci = document.getElementById('countdown-input');
+  const dots = document.getElementById('pomo-dots');
+  const ctrl = document.getElementById('controls');
+  const td = document.getElementById('time-display');
+  td.classList.remove('running','warning');
+
+  dots.innerHTML = '';
+  ci.style.display = 'none';
+
+  if (mode === 'clock') {
+    lbl.textContent = '';
+    sub.textContent = '';
+    ctrl.innerHTML = '';
+    updateClock();
+    clockInterval = setInterval(updateClock, 1000);
+  } else {
+    clearInterval(clockInterval);
+    if (mode === 'countdown') {
+      lbl.textContent = 'Đếm ngược';
+      sub.textContent = 'Đặt thời gian bên dưới';
+      ci.style.display = 'flex';
+      td.textContent = '00:00:00';
+      ctrl.innerHTML = `
+        <button class="ctrl-btn primary" onclick="startCountdown()">Bắt đầu</button>
+        <button class="ctrl-btn" onclick="stop()">Đặt lại</button>
+      `;
+    } else {
+      lbl.textContent = 'Pomodoro';
+      renderPomoDots();
+      td.textContent = pad(settings['pomo-work']) + ':00';
+      sub.textContent = 'Hiệp ' + (pomoCount + 1) + ' — Tập trung';
+      ctrl.innerHTML = `
+        <button class="ctrl-btn primary" onclick="startPomo()">Bắt đầu</button>
+        <button class="ctrl-btn" onclick="stop()">Đặt lại</button>
+      `;
+    }
+  }
+}
+
+function updateClock() {
+  const now = new Date();
+  const h = pad(now.getHours());
+  const m = pad(now.getMinutes());
+  const s = pad(now.getSeconds());
+  document.getElementById('time-display').textContent = h + ':' + m + ':' + s;
+
+  // Đổi vi-VN thành en-US và chỉnh option cho đúng thứ tự Thứ, Tháng Ngày
+  const options = { weekday: 'long', month: 'long', day: 'numeric' };
+  document.getElementById('mode-label').textContent = now.toLocaleDateString('en-US', options);
+}
+
+function renderPomoDots() {
+  const dots = document.getElementById('pomo-dots');
+  dots.innerHTML = '';
+  for (let i = 0; i < 4; i++) {
+    const d = document.createElement('div');
+    d.className = 'pomo-dot' + (i < pomoCount % 4 ? ' done' : '');
+    dots.appendChild(d);
+  }
+}
+
+// ── COUNTDOWN ──
+function startCountdown() {
+  const h = parseInt(document.getElementById('input-h').value) || 0;
+  const m = parseInt(document.getElementById('input-m').value) || 0;
+  const s = parseInt(document.getElementById('input-s').value) || 0;
+  totalSecs = h * 3600 + m * 60 + s;
+  if (totalSecs <= 0) return;
+  currentSecs = totalSecs;
+  document.getElementById('countdown-input').style.display = 'none';
+  document.getElementById('sub-label').textContent = 'Đang đếm ngược';
+  document.getElementById('controls').innerHTML = `
+    <button class="ctrl-btn" onclick="pauseResume()" id="pause-btn">Tạm dừng</button>
+    <button class="ctrl-btn" onclick="stop()">Dừng</button>
+  `;
+  running = true;
+  document.getElementById('time-display').classList.add('running');
+  setBgFocus(true);
+  timerInterval = setInterval(tickCountdown, 1000);
+}
+
+function tickCountdown() {
+  currentSecs--;
+  if (currentSecs <= 0) {
+    currentSecs = 0;
+    displayCountdownTime(0);
+    clearInterval(timerInterval);
+    running = false;
+    setBgFocus(false);
+    document.getElementById('time-display').classList.remove('running','warning');
+    showNotif('◇', 'Hoàn thành!', COMPLETE_MSGS[Math.floor(Math.random()*COMPLETE_MSGS.length)]);
+    return;
+  }
+  if (currentSecs <= 10) document.getElementById('time-display').classList.add('warning');
+  displayCountdownTime(currentSecs);
+}
+
+function displayCountdownTime(s) {
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  document.getElementById('time-display').textContent = h > 0
+    ? pad(h) + ':' + pad(m) + ':' + pad(sec)
+    : pad(m) + ':' + pad(sec);
+}
+
+// ── POMODORO ──
+function startPomo() {
+  pomoSession = 0;
+  startPomoWork();
+}
+
+function startPomoWork() {
+  pomoSession = 0;
+  currentSecs = settings['pomo-work'] * 60;
+  document.getElementById('sub-label').textContent = 'Hiệp ' + (pomoCount + 1) + ' — Tập trung';
+  document.getElementById('break-badge').style.display = 'none';
+  document.getElementById('controls').innerHTML = `
+    <button class="ctrl-btn" onclick="pauseResume()" id="pause-btn">Tạm dừng</button>
+    <button class="ctrl-btn" onclick="stop()">Dừng</button>
+  `;
+  running = true;
+  document.getElementById('time-display').classList.add('running');
+  setBgFocus(true);
+  timerInterval = setInterval(tickPomo, 1000);
+}
+
+function startPomoBreak(long) {
+  pomoSession = long ? 2 : 1;
+  currentSecs = (long ? settings['pomo-long'] : settings['pomo-break']) * 60;
+  document.getElementById('sub-label').textContent = long ? 'Nghỉ dài — Thở sâu' : 'Nghỉ ngắn — Đứng dậy đi';
+  document.getElementById('break-badge').style.display = 'block';
+  document.getElementById('time-display').classList.remove('running','warning');
+  document.getElementById('time-display').style.color = 'var(--accent2)';
+  setBgFocus(false);
+  running = true;
+  timerInterval = setInterval(tickPomo, 1000);
+}
+
+function tickPomo() {
+  currentSecs--;
+  const m = Math.floor(currentSecs / 60);
+  const s = currentSecs % 60;
+  document.getElementById('time-display').textContent = pad(m) + ':' + pad(s);
+
+  if (currentSecs <= 10 && pomoSession === 0) {
+    document.getElementById('time-display').classList.add('warning');
+  }
+
+  if (currentSecs <= 0) {
+    clearInterval(timerInterval);
+    running = false;
+    document.getElementById('time-display').classList.remove('warning');
+    document.getElementById('time-display').style.color = '';
+
+    if (pomoSession === 0) {
+      // Work done
+      pomoCount++;
+      renderPomoDots();
+      setBgFocus(false);
+      const isLong = pomoCount % 4 === 0;
+      showNotif(
+        POMO_ICONS[pomoCount % POMO_ICONS.length],
+        'Hiệp ' + pomoCount + ' xong!',
+        POMO_MSGS[Math.floor(Math.random() * POMO_MSGS.length)] + (isLong ? '\n\nBạn xứng đáng với một giải lao dài.' : '')
+      );
+      document.getElementById('notif-dismiss').onclick = () => {
+        dismissNotif();
+        startPomoBreak(isLong);
+      };
+    } else {
+      // Break done
+      document.getElementById('break-badge').style.display = 'none';
+      showNotif('✦', 'Giải lao xong!', 'Tâm trí tươi mới — hãy bước vào hiệp tiếp theo.');
+      document.getElementById('notif-dismiss').onclick = () => {
+        dismissNotif();
+        startPomoWork();
+      };
+    }
+  }
+}
+
+function pauseResume() {
+  const btn = document.getElementById('pause-btn');
+  if (running) {
+    clearInterval(timerInterval);
+    running = false;
+    btn.textContent = 'Tiếp tục';
+    setBgFocus(false);
+  } else {
+    running = true;
+    btn.textContent = 'Tạm dừng';
+    setBgFocus(true);
+    if (mode === 'countdown') timerInterval = setInterval(tickCountdown, 1000);
+    else timerInterval = setInterval(tickPomo, 1000);
+  }
+}
+
+function stop() {
+  clearInterval(timerInterval);
+  clearInterval(clockInterval);
+  running = false;
+  pomoCount = 0;
+  setBgFocus(false);
+  document.getElementById('break-badge').style.display = 'none';
+  document.getElementById('time-display').classList.remove('running','warning');
+  document.getElementById('time-display').style.color = '';
+  render();
+}
+
+// ── BG FOCUS ──
+function setBgFocus(on) {
+  const bg = document.getElementById('bg-layer');
+  bg.classList.toggle('focused', on);
+}
+
+// ── SETTINGS ──
+function updateSetting(key, val) {
+settings[key] = parseFloat(val);
+  const displays = {
+    'pomo-work': v => v + ' phút',
+    'pomo-break': v => v + ' phút',
+    'pomo-long': v => v + ' phút',
+    blur: v => v + 'px',
+    dim: v => Math.round(v * 100) + '%',
+    offset: v => v + '%',
+  };
+  document.getElementById('v-' + key).textContent = displays[key](val);
+
+  if (key === 'blur') {
+    document.documentElement.style.setProperty('--focus-blur', val + 'px');
+  }
+  if (key === 'dim') {
+    document.documentElement.style.setProperty('--focus-dim', val);
+  }
+  if (key === 'offset') {
+    document.getElementById('clock-display').style.transform = 'translateY(' + val + 'vh)';
+  }
+  }
+
+// ── BACKGROUND ──
+function applyBg(url) {
+  const bg = document.getElementById('bg-layer');
+  bg.style.backgroundImage = 'url("' + url + '")';
+}
+
+function applyBgUrl() {
+  const url = document.getElementById('bg-url-input').value.trim();
+  if (url) applyBg(url);
+}
+
+function clearBg() {
+  document.getElementById('bg-layer').style.backgroundImage = '';
+  document.getElementById('bg-url-input').value = '';
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = ev => applyBg(ev.target.result);
+    reader.readAsDataURL(file);
+  }
+}
+
+function handleFileInput(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => applyBg(ev.target.result);
+  reader.readAsDataURL(file);
+}
+
+// ── YOUTUBE ──
+function loadYT() {
+  const url = document.getElementById('yt-url-input').value.trim();
+  if (!url) return;
+  
+  let id = '';
+  // Regex này "lợi hại" hơn, bắt được nhiều loại link hơn
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  
+  if (match && match[2].length === 11) {
+    id = match[2];
+  } else {
+    alert('Link này có vẻ "lạ" quá, kiểm tra lại giúp mình nhé.');
+    return;
+  }
+
+  const wrap = document.getElementById('yt-frame-wrap');
+  const iframe = document.getElementById('yt-iframe');
+  
+  // Thêm tham số enablejsapi=1 và origin để lách luật một số trình duyệt
+  iframe.src = `https://www.youtube.com/embed/${id}?autoplay=1&enablejsapi=1&origin=${window.location.origin}`;
+  wrap.classList.add('visible');
+}
+
+// ── NOTES ──
+function saveNotes() {
+  const val = document.getElementById('notes-area').value;
+  localStorage.setItem('focus-notes', val);
+  const words = val.trim() ? val.trim().split(/\s+/).length : 0;
+  document.getElementById('notes-meta').textContent = words + ' từ';
+}
+function exportNotes() {
+  const text = document.getElementById('notes-area').value;
+  if (!text.trim()) {
+    alert("Ghi chú đang trống không, định xuất hư vô ra file à?");
+    return;
+  }
+
+  // Tạo một đối tượng Blob chứa nội dung văn bản
+  const blob = new Blob([text], { type: 'text/plain' });
+  
+  // Tạo một đường dẫn (URL) tạm thời cho Blob đó
+  const url = window.URL.createObjectURL(blob);
+  
+  // Tạo một thẻ <a> ẩn để kích hoạt lệnh tải xuống
+  const a = document.createElement('a');
+  const now = new Date();
+  const timestamp = `${now.getDate()}-${now.getMonth() + 1}-${now.getFullYear()}`;
+  
+  a.href = url;
+  a.download = `focus-notes-${timestamp}.txt`; // Tên file kèm ngày tháng cho chuyên nghiệp
+  
+  document.body.appendChild(a);
+  a.click(); // Kích hoạt click ảo
+  
+  // Dọn dẹp sau khi tải xong
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+}
+(function loadNotes() {
+  const saved = localStorage.getItem('focus-notes');
+  if (saved) {
+    document.getElementById('notes-area').value = saved;
+    const words = saved.trim() ? saved.trim().split(/\s+/).length : 0;
+    document.getElementById('notes-meta').textContent = words + ' từ';
+  }
+})();
+
+// ── PANELS ──
+function togglePanel(id, btn) {
+  const panel = document.getElementById(id);
+  const isOpen = panel.classList.contains('open');
+  closeAllPanels();
+  if (!isOpen) {
+    panel.classList.add('open');
+    if (btn) btn.classList.add('active');
+  }
+}
+
+function closePanel(id, btnId) {
+  document.getElementById(id).classList.remove('open');
+  if (btnId) document.getElementById(btnId).classList.remove('active');
+}
+
+function closeAllPanels() {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
+  document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+}
+
+// Close panel on outside click
+document.addEventListener('click', e => {
+  const panels = document.querySelectorAll('.panel');
+  const btns = document.querySelectorAll('.tool-btn');
+  let clickedInsidePanel = false;
+  panels.forEach(p => { if (p.contains(e.target)) clickedInsidePanel = true; });
+  btns.forEach(b => { if (b.contains(e.target)) clickedInsidePanel = true; });
+  if (!clickedInsidePanel) closeAllPanels();
+});
+
+// ── NOTIFICATION ──
+function showNotif(icon, title, msg) {
+  document.getElementById('notif-icon').textContent = icon;
+  document.getElementById('notif-title').textContent = title;
+  document.getElementById('notif-msg').textContent = msg;
+  document.getElementById('notification').classList.add('show');
+  // Reset dismiss to default
+  document.getElementById('notif-dismiss').onclick = dismissNotif;
+}
+
+function dismissNotif() {
+  document.getElementById('notification').classList.remove('show');
+}
+
+// Init
+render();
+</script>
+</body>
+</html>
