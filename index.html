@@ -295,6 +295,7 @@ body.timer-running #bg-layer { transform: scale(1.06); }
   font-size: clamp(88px, 15vw, 180px);
   font-weight: 200;
   line-height: 1;
+  letter-spacing: -0.03em;
   color: var(--text);
   transition: color 0.4s ease;
   font-feature-settings: 'tnum' 1;
@@ -1824,7 +1825,7 @@ function updateSetting(key, val) {
   document.getElementById('v-' + key).textContent = displays[key](val);
   if (key === 'blur') document.documentElement.style.setProperty('--focus-blur', val + 'px');
   if (key === 'dim') document.documentElement.style.setProperty('--focus-dim', val);
-  if (key === 'offset') document.getElementById('clock-display').style.transform = 'translateY(calc(-20% + ' + val + 'vh))';
+  if (key === 'offset') document.getElementById('clock-display').style.transform = 'translateY(calc(-50% + ' + val + 'vh))';
 }
 
 /* ── BACKGROUND IMAGE ── */
