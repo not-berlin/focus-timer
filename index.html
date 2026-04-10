@@ -2234,7 +2234,7 @@ function setQuoteLang(isVi) {
 
 /* ── FONT SELECTOR ── */
 const fontMap = {
-  default: "'SF Pro'",
+  default: "'SF Pro', 'DM Mono', sans-serif",
   mono: "'DM Mono', monospace",
   serif: "'DM Serif Display', serif",
 };
@@ -2245,15 +2245,16 @@ function setFont(name, btn) {
   const td = document.getElementById('time-display');
   if (name === 'serif') {
     td.style.fontFamily = "'DM Serif Display', serif";
+    td.style.fontStyle = 'italic';
     td.style.letterSpacing = '-0.01em';
   } else if (name === 'mono') {
     td.style.fontFamily = "'DM Mono', monospace";
     td.style.fontStyle = '';
     td.style.letterSpacing = '-0.02em';
   } else {
-    td.style.fontFamily = "'SF Pro', san-serif";
+    td.style.fontFamily = '';
     td.style.fontStyle = '';
-    td.style.letterSpacing = '-0.03em';
+    td.style.letterSpacing = '';
   }
 }
 </script>
