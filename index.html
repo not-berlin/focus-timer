@@ -971,12 +971,30 @@ input[type=range]::-webkit-slider-thumb {
 #notif-dismiss:hover { background: linear-gradient(135deg,rgba(232,213,176,0.3),rgba(232,213,176,0.12)); }
 
 /* ── CLOCK DIM MODE ── */
-#clock-dim-btn {
-  display: none;
-  margin-top: 18px;
-  justify-content: center;
+body.clock-dim #bg-layer,
+body.clock-dim #bg-new {
+  filter: blur(var(--focus-blur));
 }
-#clock-display.clock-mode #clock-dim-btn { display: flex; }
+body.clock-dim #bg-layer::after,
+body.clock-dim #bg-new::after,
+body.clock-dim #yt-bg-wrap::after {
+  background: rgba(0,0,0,var(--focus-dim));
+}
+/* Ensure UI stays visible in clock-dim (override timer-running-like opacity) */
+body.clock-dim #nav,
+body.clock-dim #quote-box,
+body.clock-dim #bottom-left,
+body.clock-dim #bottom-right {
+  opacity: 1 !important;
+  pointer-events: all !important;
+}
+#btn-dim.active {
+  background: linear-gradient(135deg, rgba(232,213,176,0.2), rgba(232,213,176,0.07));
+  border-top-color: rgba(232,213,176,0.45);
+  border-left-color: rgba(232,213,176,0.28);
+  color: var(--accent);
+  box-shadow: 0 4px 20px rgba(232,213,176,0.1), inset 0 1px 0 rgba(232,213,176,0.2);
+}
 .dim-toggle-btn {
   backdrop-filter: blur(14px) saturate(180%);
   -webkit-backdrop-filter: blur(14px) saturate(180%);
@@ -1143,9 +1161,9 @@ input[type=range]::-webkit-slider-thumb {
 <!-- Nav -->
 <nav id="nav">
   <div id="nav-row1">
-    <button class="nav-btn active" onclick="switchMode('clock')">Giờ hiện tại</button>
-    <button class="nav-btn" onclick="switchMode('countdown')">Đếm ngược</button>
-    <button class="nav-btn" onclick="switchMode('pomodoro')">Pomodoro</button>
+    <button class="nav-btn active" onclick="switchMode('clock')" data-i18n="navClock">Giờ hiện tại</button>
+    <button class="nav-btn" onclick="switchMode('countdown')" data-i18n="navCountdown">Đếm ngược</button>
+    <button class="nav-btn" onclick="switchMode('pomodoro')" data-i18n="navPomo">Pomodoro</button>
   </div>
 
   <!-- Countdown to target date -->
@@ -1154,9 +1172,9 @@ input[type=range]::-webkit-slider-thumb {
     <svg class="ncd-icon" viewBox="0 0 24 24" fill="none" stroke="rgba(168,196,184,0.7)" stroke-width="1.5" stroke-linecap="round">
       <path d="M5 3h14M5 21h14M7 3v4l5 5-5 5v4M17 3v4l-5 5 5 5v4"/>
     </svg>
-    <span class="ncd-label">Chỉ còn</span>
+    <span class="ncd-label" data-i18n="ncdLeft">Chỉ còn</span>
     <span id="ncd-time">--n --:--:--</span>
-    <span class="ncd-label">Là thi THPTQG</span>
+    <span class="ncd-label" data-i18n="ncdTarget">Là thi THPTQG</span>
   </div>
 </nav>
 
@@ -1181,19 +1199,10 @@ input[type=range]::-webkit-slider-thumb {
       <input type="number" class="time-input" id="input-s" min="0" max="59" value="0" placeholder="00">
     </div>
     <div id="controls"></div>
-    <div id="clock-dim-btn">
-      <button class="dim-toggle-btn" id="dim-toggle" onclick="toggleClockDim()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="5"/>
-          <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-        </svg>
-        Tối mờ
-      </button>
-    </div>
   </div>
 </div>
 
-<div id="break-badge">Giải lao</div>
+<div id="break-badge" data-i18n="breakBadge">Giải lao</div>
 
 <!-- Bottom Left Tools -->
 <div id="bottom-left">
@@ -1228,6 +1237,11 @@ input[type=range]::-webkit-slider-thumb {
 
 <!-- Bottom Right -->
 <div id="bottom-right">
+  <div class="tool-btn" id="btn-dim" onclick="toggleClockDim()" title="Tối mờ" style="display:none;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/>
+    </svg>
+  </div>
   <div class="tool-btn" id="btn-settings" onclick="togglePanel('settings-panel', this)" title="Cài đặt">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="3"/>
@@ -1257,42 +1271,42 @@ input[type=range]::-webkit-slider-thumb {
 <!-- BG Panel -->
 <div class="panel" id="bg-panel">
   <div class="panel-title">
-    Hình nền
+    <span data-i18n="panelBg">Hình nền</span>
     <button class="panel-close" onclick="closePanel('bg-panel','btn-bg')">✕</button>
   </div>
   <div id="drop-zone" onclick="document.getElementById('file-input').click()"
        ondragover="event.preventDefault();this.classList.add('dragover')"
        ondragleave="this.classList.remove('dragover')"
        ondrop="handleDrop(event)">
-    Kéo thả ảnh vào đây<br>
-    <span style="font-size:10px;opacity:0.5">hoặc nhấn để chọn từ máy</span>
+    <span data-i18n="dropZone">Kéo thả ảnh vào đây</span><br>
+    <span style="font-size:10px;opacity:0.5" data-i18n="dropZoneSub">hoặc nhấn để chọn từ máy</span>
   </div>
   <input type="file" id="file-input" accept="image/*" onchange="handleFileInput(event)">
-  <input type="text" class="panel-input" id="bg-url-input" placeholder="Hoặc dán link ảnh vào đây…" onkeydown="if(event.key==='Enter')applyBgUrl()">
-  <button class="small-btn" onclick="applyBgUrl()">Áp dụng link</button>
-  <button class="small-btn" onclick="clearBg()" style="margin-top:6px;opacity:0.5">Xóa hình nền</button>
+  <input type="text" class="panel-input" id="bg-url-input" placeholder="Hoặc dán link ảnh vào đây…" data-i18n-ph="bgUrlPh" onkeydown="if(event.key==='Enter')applyBgUrl()">
+  <button class="small-btn" onclick="applyBgUrl()" data-i18n="applyLink">Áp dụng link</button>
+  <button class="small-btn" onclick="clearBg()" style="margin-top:6px;opacity:0.5" data-i18n="clearBg">Xóa hình nền</button>
 </div>
 
 <!-- Music Panel -->
 <div class="panel" id="music-panel">
   <div class="panel-title">
-    Nhạc nền
+    <span data-i18n="panelMusic">Nhạc nền</span>
     <button class="panel-close" onclick="closePanel('music-panel','btn-music')">✕</button>
   </div>
   <!-- Tab selector -->
   <div id="music-tabs" style="display:flex;gap:6px;margin-bottom:12px;">
-    <button class="music-tab active" onclick="switchMusicTab('yt',this)">YouTube</button>
-    <button class="music-tab" onclick="switchMusicTab('sc',this)">SoundCloud</button>
+    <button class="music-tab active" onclick="switchMusicTab('yt',this)" data-i18n="tabYt">YouTube</button>
+    <button class="music-tab" onclick="switchMusicTab('sc',this)" data-i18n="tabSc">SoundCloud</button>
   </div>
   <!-- YouTube tab -->
   <div id="music-tab-yt">
-    <input type="text" class="panel-input" id="yt-url-input" style="margin-top:0" placeholder="Dán link YouTube / playlist…" onkeydown="if(event.key==='Enter')loadYT()">
-    <button class="small-btn" onclick="loadYT()">Phát nhạc</button>
+    <input type="text" class="panel-input" id="yt-url-input" style="margin-top:0" placeholder="Dán link YouTube / playlist…" data-i18n-ph="ytPh" onkeydown="if(event.key==='Enter')loadYT()">
+    <button class="small-btn" onclick="loadYT()" data-i18n="playMusic">Phát nhạc</button>
   </div>
   <!-- SoundCloud tab -->
   <div id="music-tab-sc" style="display:none;">
-    <input type="text" class="panel-input" id="sc-url-input" style="margin-top:0" placeholder="Dán link SoundCloud / playlist…" onkeydown="if(event.key==='Enter')loadSC()">
-    <button class="small-btn" onclick="loadSC()">Phát nhạc</button>
+    <input type="text" class="panel-input" id="sc-url-input" style="margin-top:0" placeholder="Dán link SoundCloud / playlist…" data-i18n-ph="scPh" onkeydown="if(event.key==='Enter')loadSC()">
+    <button class="small-btn" onclick="loadSC()" data-i18n="playMusic">Phát nhạc</button>
   </div>
   <div id="yt-frame-wrap" style="margin-top:10px;">
     <iframe id="yt-iframe" allowfullscreen allow="autoplay; encrypted-media"></iframe>
@@ -1302,29 +1316,29 @@ input[type=range]::-webkit-slider-thumb {
 <!-- Notes Panel -->
 <div class="panel" id="notes-panel">
   <div class="panel-title">
-    Ghi chú
+    <span data-i18n="panelNotes">Ghi chú</span>
     <div style="display:flex;gap:6px;align-items:center;">
-      <button class="panel-close" onclick="exportNotes()" title="Tải về .txt" style="border-radius:6px;width:auto;padding:0 8px;background:rgba(168,196,184,0.15);color:var(--accent2);font-size:11px;border-color:rgba(168,196,184,0.25);">Tải về</button>
+      <button class="panel-close" onclick="exportNotes()" title="Tải về .txt" style="border-radius:6px;width:auto;padding:0 8px;background:rgba(168,196,184,0.15);color:var(--accent2);font-size:11px;border-color:rgba(168,196,184,0.25);" data-i18n="exportNotes">Tải về</button>
       <button class="panel-close" onclick="closePanel('notes-panel','btn-notes')">✕</button>
     </div>
   </div>
-  <textarea id="notes-area" placeholder="Gõ gì đó vào đây…&#10;Cứ tự nhiên như đang nghĩ thôi." oninput="saveNotes()"></textarea>
+  <textarea id="notes-area" placeholder="Gõ gì đó vào đây…&#10;Cứ tự nhiên như đang nghĩ thôi." data-i18n-ph="notesPh" oninput="saveNotes()"></textarea>
   <div class="notes-meta" id="notes-meta">0 từ</div>
 </div>
 
 <!-- Settings Panel -->
 <div class="panel" id="settings-panel">
   <div class="panel-title">
-    Cài đặt
+    <span data-i18n="panelSettings">Cài đặt</span>
     <button class="panel-close" onclick="closePanel('settings-panel','btn-settings')">✕</button>
   </div>
 
-  <div class="setting-section-title">Pomodoro</div>
+  <div class="setting-section-title" data-i18n="settSectPomo">Pomodoro</div>
 
   <div class="setting-row">
     <div>
-      <div class="setting-label">Tập trung</div>
-      <div class="setting-sublabel">phút</div>
+      <div class="setting-label" data-i18n="settPomoWork">Tập trung</div>
+      <div class="setting-sublabel" data-i18n="settMinutes">phút</div>
     </div>
     <div class="slider-wrap">
       <input type="range" min="5" max="90" value="25" id="s-pomo-work" oninput="updateSetting('pomo-work',this.value)" step="5">
@@ -1334,7 +1348,7 @@ input[type=range]::-webkit-slider-thumb {
 
   <div class="setting-row">
     <div>
-      <div class="setting-label">Nghỉ ngắn</div>
+      <div class="setting-label" data-i18n="settPomoBreak">Nghỉ ngắn</div>
       <div class="setting-sublabel">phút</div>
     </div>
     <div class="slider-wrap">
@@ -1345,8 +1359,8 @@ input[type=range]::-webkit-slider-thumb {
 
   <div class="setting-row">
     <div>
-      <div class="setting-label">Nghỉ dài</div>
-      <div class="setting-sublabel">sau 4 hiệp</div>
+      <div class="setting-label" data-i18n="settPomoLong">Nghỉ dài</div>
+      <div class="setting-sublabel" data-i18n="settAfter4">sau 4 hiệp</div>
     </div>
     <div class="slider-wrap">
       <input type="range" min="5" max="60" value="15" id="s-pomo-long" oninput="updateSetting('pomo-long',this.value)" step="5">
@@ -1355,11 +1369,11 @@ input[type=range]::-webkit-slider-thumb {
   </div>
 
   <div class="setting-divider"></div>
-  <div class="setting-section-title">Hiển thị</div>
+  <div class="setting-section-title" data-i18n="settSectDisplay">Hiển thị</div>
 
   <div class="setting-row">
     <div>
-      <div class="setting-label">Blur nền khi chạy</div>
+      <div class="setting-label" data-i18n="settBlur">Blur nền khi chạy</div>
       <div class="setting-sublabel">px</div>
     </div>
     <div class="slider-wrap">
@@ -1370,8 +1384,8 @@ input[type=range]::-webkit-slider-thumb {
 
   <div class="setting-row">
     <div>
-      <div class="setting-label">Độ tối nền mặc định</div>
-      <div class="setting-sublabel">ảnh nền khi chưa chạy</div>
+      <div class="setting-label" data-i18n="settDim">Độ tối nền mặc định</div>
+      <div class="setting-sublabel" data-i18n="settDimSub">ảnh nền khi chưa chạy</div>
     </div>
     <div class="slider-wrap">
       <input type="range" min="0.2" max="0.9" value="0.55" id="s-dim" oninput="updateSetting('dim',this.value)" step="0.05">
@@ -1381,52 +1395,52 @@ input[type=range]::-webkit-slider-thumb {
 
   <div class="setting-row">
     <div>
-      <div class="setting-label">Vị trí đồng hồ</div>
-      <div class="setting-sublabel">từ giữa</div>
+      <div class="setting-label" data-i18n="settOffset">Vị trí đồng hồ</div>
+      <div class="setting-sublabel" data-i18n="settOffsetSub">từ giữa</div>
     </div>
     <div class="slider-wrap">
-      <input type="range" min="-15" max="15" value="0" id="s-offset" oninput="updateSetting('offset',this.value)" step="1">
+      <input type="range" min="-20" max="10" value="0" id="s-offset" oninput="updateSetting('offset',this.value)" step="1">
       <span class="slider-val" id="v-offset">0%</span>
     </div>
   </div>
 
   <div class="setting-divider"></div>
-  <div class="setting-section-title">Giao diện</div>
+  <div class="setting-section-title" data-i18n="settSectInterface">Giao diện</div>
 
   <div class="setting-row">
     <div>
-      <div class="setting-label">Ngôn ngữ trích dẫn</div>
-      <div class="setting-sublabel">góc trên phải</div>
+      <div class="setting-label" data-i18n="settLang">Ngôn ngữ</div>
+      <div class="setting-sublabel" data-i18n="settLangSub">giao diện</div>
     </div>
     <label class="toggle">
-      <input type="checkbox" id="lang-toggle" onchange="setQuoteLang(this.checked)">
+      <input type="checkbox" id="lang-toggle" onchange="setLang(this.checked)">
       <div class="toggle-track"></div>
       <div class="toggle-thumb"></div>
     </label>
   </div>
   <div style="font-size:10px;color:var(--muted);margin-top:-10px;margin-bottom:14px;text-align:right;letter-spacing:0.05em;">
-    <span id="lang-label">Tiếng Anh</span>
+    <span id="lang-label" data-i18n="langCurrent">Tiếng Việt</span>
   </div>
 
   <div class="setting-row" style="margin-bottom:8px;">
     <div>
       <div class="setting-label">Font chữ</div>
-      <div class="setting-sublabel">toàn bộ giao diện</div>
+      <div class="setting-sublabel" data-i18n="settFontSub">toàn bộ giao diện</div>
     </div>
   </div>
   <div class="font-selector" style="margin-bottom:16px;">
-    <button class="font-opt active" id="font-default" onclick="setFont('default',this)">Mặc định</button>
+    <button class="font-opt active" id="font-default" onclick="setFont('default',this)" data-i18n="fontDefault">Mặc định</button>
     <button class="font-opt opt-mono" id="font-mono" onclick="setFont('mono',this)">Mono</button>
     <button class="font-opt opt-serif" id="font-serif" onclick="setFont('serif',this)">Serif</button>
   </div>
 
   <div class="setting-divider"></div>
-  <div class="setting-section-title">Nền video</div>
+  <div class="setting-section-title" data-i18n="settSectVideoBg">Nền video</div>
 
   <div class="setting-row">
     <div>
-      <div class="setting-label">YouTube làm nền</div>
-      <div class="setting-sublabel">video lặp im lặng</div>
+      <div class="setting-label" data-i18n="settYtBg">YouTube làm nền</div>
+      <div class="setting-sublabel" data-i18n="settYtBgSub">video lặp im lặng</div>
     </div>
     <label class="toggle">
       <input type="checkbox" id="yt-bg-toggle" onchange="toggleYtBg(this.checked)">
@@ -1436,9 +1450,9 @@ input[type=range]::-webkit-slider-thumb {
   </div>
 
   <div id="yt-bg-section" style="display:none;">
-    <input type="text" id="yt-bg-input" placeholder="Dán link YouTube vào đây…" onkeydown="if(event.key==='Enter')applyYtBg()">
-    <button class="small-btn" onclick="applyYtBg()" style="margin-top:6px;">Áp dụng video nền</button>
-    <button class="small-btn" onclick="clearYtBg()" style="margin-top:5px;opacity:0.5;">Xóa video nền</button>
+    <input type="text" id="yt-bg-input" placeholder="Dán link YouTube vào đây…" data-i18n-ph="ytBgPh" onkeydown="if(event.key==='Enter')applyYtBg()">
+    <button class="small-btn" onclick="applyYtBg()" style="margin-top:6px;" data-i18n="applyVideoBg">Áp dụng video nền</button>
+    <button class="small-btn" onclick="clearYtBg()" style="margin-top:5px;opacity:0.5;" data-i18n="clearVideoBg">Xóa video nền</button>
   </div>
 </div>
 
@@ -1448,7 +1462,7 @@ input[type=range]::-webkit-slider-thumb {
     <div class="notif-icon" id="notif-icon">✦</div>
     <div class="notif-title" id="notif-title">Xong rồi!</div>
     <div class="notif-msg" id="notif-msg"></div>
-    <button id="notif-dismiss" onclick="dismissNotif()">Tiếp tục thôi</button>
+    <button id="notif-dismiss" onclick="dismissNotif()" data-i18n="notifDismiss">Tiếp tục thôi</button>
   </div>
 </div>
 
@@ -1504,7 +1518,7 @@ let fpOpen = false;
 let isDragging = false;
 let dragOffX = 0, dragOffY = 0;
 let lastTimeStr = '';
-let usesViLang = false;
+let lang = 'vi';
 let clockDimOn = false;
 
 const settings = {
@@ -1536,8 +1550,7 @@ setInterval(updateNavCountdown, 1000);
 
 /* ── QUOTES ── */
 function showQuote() {
-  const pool = usesViLang ? QUOTES_VI : QUOTES;
-  const q = pool[quoteIdx % pool.length];
+  const q = QUOTES[quoteIdx % QUOTES.length];
   const el = document.getElementById('quote-text');
   el.style.opacity = 0;
   setTimeout(() => {
@@ -1578,29 +1591,31 @@ function render() {
     sub.textContent = '';
     ctrl.innerHTML = '';
     document.getElementById('clock-display').classList.add('clock-mode');
+    document.getElementById('btn-dim').style.display = '';
     updateClock();
     clockInterval = setInterval(updateClock, 1000);
   } else {
     document.getElementById('clock-display').classList.remove('clock-mode');
+    document.getElementById('btn-dim').style.display = 'none';
     // Reset dim khi rời clock mode
-    if (clockDimOn) { clockDimOn = false; setBgFocus(false); const btn = document.getElementById('dim-toggle'); if(btn) btn.classList.remove('active'); }
+    if (clockDimOn) { clockDimOn = false; document.body.classList.remove('clock-dim'); document.getElementById('btn-dim').classList.remove('active'); }
     clearInterval(clockInterval);
     if (mode === 'countdown') {
-      lbl.textContent = 'Đếm ngược';
-      sub.textContent = 'Đặt thời gian bên dưới';
+      lbl.textContent = t('countdownLbl');
+      sub.textContent = t('countdownSub');
       ci.style.display = 'flex';
       setTimeDisplay('00:00:00');
       ctrl.innerHTML = `
-        <button class="ctrl-btn primary" onclick="startCountdown()">Bắt đầu</button>
-        <button class="ctrl-btn" onclick="stop()">Đặt lại</button>`;
+        <button class="ctrl-btn primary" onclick="startCountdown()">${t('start')}</button>
+        <button class="ctrl-btn" onclick="stop()">${t('reset')}</button>`;
     } else {
-      lbl.textContent = 'Pomodoro';
+      lbl.textContent = t('pomoLbl');
       renderPomoDots();
       setTimeDisplay(pad(settings['pomo-work']) + ':00');
-      sub.textContent = 'Hiệp ' + (pomoCount + 1) + ' — Tập trung';
+      sub.textContent = t('focusSub', {n: pomoCount + 1});
       ctrl.innerHTML = `
-        <button class="ctrl-btn primary" onclick="startPomo()">Bắt đầu</button>
-        <button class="ctrl-btn" onclick="stop()">Đặt lại</button>`;
+        <button class="ctrl-btn primary" onclick="startPomo()">${t('start')}</button>
+        <button class="ctrl-btn" onclick="stop()">${t('reset')}</button>`;
     }
   }
 }
@@ -1658,17 +1673,17 @@ function startCountdown() {
   if (totalSecs <= 0) return;
   currentSecs = totalSecs;
   document.getElementById('countdown-input').style.display = 'none';
-  document.getElementById('sub-label').textContent = 'Đang đếm ngược';
+  document.getElementById('sub-label').textContent = t('countingSub');
   document.getElementById('controls').innerHTML = `
-    <button class="ctrl-btn" onclick="pauseResume()" id="pause-btn">Tạm dừng</button>
-    <button class="ctrl-btn" onclick="stop()">Dừng</button>`;
+    <button class="ctrl-btn" onclick="pauseResume()" id="pause-btn">${t('pause')}</button>
+    <button class="ctrl-btn" onclick="stop()">${t('stop')}</button>`;
   running = true;
   document.getElementById('time-display').classList.add('running');
   setBgFocus(true);
   document.body.classList.add('timer-running');
   closeAllPanels();
   timerInterval = setInterval(tickCountdown, 1000);
-  document.getElementById('fp-mode').textContent = 'đếm ngược';
+  document.getElementById('fp-mode').textContent = t('fpCountdown');
 }
 
 function tickCountdown() {
@@ -1681,7 +1696,7 @@ function tickCountdown() {
     setBgFocus(false);
     document.body.classList.remove('timer-running');
     document.getElementById('time-display').classList.remove('running','warning');
-    showNotif('◇', 'Hoàn thành!', COMPLETE_MSGS[Math.floor(Math.random()*COMPLETE_MSGS.length)]);
+    showNotif('◇', t('notifDoneTitle'), COMPLETE_MSGS[Math.floor(Math.random()*COMPLETE_MSGS.length)]);
     return;
   }
   if (currentSecs <= 10) document.getElementById('time-display').classList.add('warning');
@@ -1705,23 +1720,23 @@ function startPomo() {
 function startPomoWork() {
   pomoSession = 0;
   currentSecs = settings['pomo-work'] * 60;
-  document.getElementById('sub-label').textContent = 'Hiệp ' + (pomoCount + 1) + ' — Tập trung';
+  document.getElementById('sub-label').textContent = t('focusSub', {n: pomoCount + 1});
   document.getElementById('break-badge').style.display = 'none';
   document.getElementById('controls').innerHTML = `
-    <button class="ctrl-btn" onclick="pauseResume()" id="pause-btn">Tạm dừng</button>
-    <button class="ctrl-btn" onclick="stop()">Dừng</button>`;
+    <button class="ctrl-btn" onclick="pauseResume()" id="pause-btn">${t('pause')}</button>
+    <button class="ctrl-btn" onclick="stop()">${t('stop')}</button>`;
   running = true;
   document.getElementById('time-display').classList.add('running');
   setBgFocus(true);
   document.body.classList.add('timer-running');
   closeAllPanels();
   timerInterval = setInterval(tickPomo, 1000);
-  document.getElementById('fp-mode').textContent = 'tập trung';
+  document.getElementById('fp-mode').textContent = t('fpFocus');
 }
 function startPomoBreak(long) {
   pomoSession = long ? 2 : 1;
   currentSecs = (long ? settings['pomo-long'] : settings['pomo-break']) * 60;
-  document.getElementById('sub-label').textContent = long ? 'Nghỉ dài — Thở sâu' : 'Nghỉ ngắn — Đứng dậy đi';
+  document.getElementById('sub-label').textContent = long ? t('longBreakSub') : t('shortBreakSub');
   document.getElementById('break-badge').style.display = 'block';
   document.getElementById('time-display').classList.remove('running','warning');
   document.getElementById('time-display').style.color = 'var(--accent2)';
@@ -1729,7 +1744,7 @@ function startPomoBreak(long) {
   running = true;
   document.body.classList.add('timer-running');
   timerInterval = setInterval(tickPomo, 1000);
-  document.getElementById('fp-mode').textContent = 'giải lao';
+  document.getElementById('fp-mode').textContent = t('fpBreak');
 }
 function tickPomo() {
   currentSecs--;
@@ -1748,13 +1763,13 @@ function tickPomo() {
       const isLong = pomoCount % 4 === 0;
       showNotif(
         POMO_ICONS[pomoCount % POMO_ICONS.length],
-        'Hiệp ' + pomoCount + ' xong!',
-        POMO_MSGS[Math.floor(Math.random()*POMO_MSGS.length)] + (isLong ? '\n\nBạn xứng đáng với một giải lao dài.' : '')
+        t('notifPomoTitle', {n: pomoCount}),
+        POMO_MSGS[Math.floor(Math.random()*POMO_MSGS.length)] + (isLong ? t('notifLongBreak') : '')
       );
       document.getElementById('notif-dismiss').onclick = () => { dismissNotif(); startPomoBreak(isLong); };
     } else {
       document.getElementById('break-badge').style.display = 'none';
-      showNotif('✦','Giải lao xong!','Tâm trí tươi mới — hãy bước vào hiệp tiếp theo.');
+      showNotif('✦', t('notifBreakDone'), t('notifBreakMsg'));
       document.getElementById('notif-dismiss').onclick = () => { dismissNotif(); startPomoWork(); };
     }
   }
@@ -1766,12 +1781,12 @@ function pauseResume() {
   if (running) {
     clearInterval(timerInterval);
     running = false;
-    btn.textContent = 'Tiếp tục';
+    btn.textContent = t('resume');
     setBgFocus(false);
     document.body.classList.remove('timer-running');
   } else {
     running = true;
-    btn.textContent = 'Tạm dừng';
+    btn.textContent = t('pause');
     setBgFocus(true);
     document.body.classList.add('timer-running');
     if (mode === 'countdown') timerInterval = setInterval(tickCountdown, 1000);
@@ -1810,7 +1825,7 @@ function updateSetting(key, val) {
   document.getElementById('v-' + key).textContent = displays[key](val);
   if (key === 'blur') document.documentElement.style.setProperty('--focus-blur', val + 'px');
   if (key === 'dim') document.documentElement.style.setProperty('--focus-dim', val);
-  if (key === 'offset') document.getElementById('clock-display').style.transform = 'translateY(' + val + 'vh)';
+  if (key === 'offset') document.getElementById('clock-display').style.transform = 'translateY(calc(-50% + ' + val + 'vh))';
 }
 
 /* ── BACKGROUND IMAGE ── */
@@ -1995,7 +2010,7 @@ function saveNotes() {
   const val = document.getElementById('notes-area').value;
   localStorage.setItem('focus-notes', val);
   const words = val.trim() ? val.trim().split(/\s+/).length : 0;
-  document.getElementById('notes-meta').textContent = words + ' từ';
+  document.getElementById('notes-meta').textContent = words + t('wordUnit');
 }
 function exportNotes() {
   const text = document.getElementById('notes-area').value;
@@ -2014,7 +2029,7 @@ function exportNotes() {
   if (saved) {
     document.getElementById('notes-area').value = saved;
     const words = saved.trim() ? saved.trim().split(/\s+/).length : 0;
-    document.getElementById('notes-meta').textContent = words + ' từ';
+    document.getElementById('notes-meta').textContent = words + t('wordUnit');
   }
 })();
 
@@ -2207,29 +2222,95 @@ render();
 /* ── CLOCK DIM MODE ── */
 function toggleClockDim() {
   clockDimOn = !clockDimOn;
-  setBgFocus(clockDimOn);
-  const btn = document.getElementById('dim-toggle');
-  btn.classList.toggle('active', clockDimOn);
+  document.body.classList.toggle('clock-dim', clockDimOn);
+  document.getElementById('btn-dim').classList.toggle('active', clockDimOn);
 }
 
-/* ── QUOTE LANGUAGE ── */
-const QUOTES_VI = [
-  { text: "Bắt đầu là nửa chặng đường đã qua.", author: "Aristotle" },
-  { text: "Không cần thấy cả con đường, chỉ cần bước đi trong ánh sáng bạn có.", author: "Martin Luther King Jr." },
-  { text: "Tập trung không phải là từ chối mọi thứ xấu, mà là nói vâng với điều quan trọng nhất.", author: "Steve Jobs" },
-  { text: "Kiên nhẫn không phải chờ đợi thụ động, mà là hành động không mệt mỏi.", author: "Khuyết danh" },
-  { text: "Làm tốt hơn ngày hôm qua — đó là đủ rồi.", author: "Khuyết danh" },
-  { text: "Tâm trí tĩnh lặng nhìn thấy nhiều hơn tâm trí ồn ào.", author: "Thiền học" },
-  { text: "Thời gian không chờ ai, nhưng người biết trân quý nó thì sống lâu hơn.", author: "Khuyết danh" },
-  { text: "Hãy làm điều khó trước — điều dễ sẽ tự lo cho mình.", author: "Dale Carnegie" },
-  { text: "Một giờ tập trung bằng một ngày xao nhãng.", author: "Khuyết danh" },
-  { text: "Cứ đơn giản thôi — sự phức tạp là kẻ thù của hành động.", author: "Khuyết danh" },
-];
-function setQuoteLang(isVi) {
-  usesViLang = isVi;
-  document.getElementById('lang-label').textContent = isVi ? 'Tiếng Việt' : 'Tiếng Anh';
-  quoteIdx = 0;
-  showQuote();
+/* ── I18N SYSTEM ── */
+const TRANS = {
+  vi: {
+    navClock:'Giờ hiện tại', navCountdown:'Đếm ngược', navPomo:'Pomodoro',
+    ncdLeft:'Chỉ còn', ncdTarget:'Là thi THPTQG',
+    panelBg:'Hình nền', panelMusic:'Nhạc nền', panelNotes:'Ghi chú', panelSettings:'Cài đặt',
+    dropZone:'Kéo thả ảnh vào đây', dropZoneSub:'hoặc nhấn để chọn từ máy',
+    bgUrlPh:'Hoặc dán link ảnh vào đây…', applyLink:'Áp dụng link', clearBg:'Xóa hình nền',
+    ytPh:'Dán link YouTube / playlist…', scPh:'Dán link SoundCloud / playlist…',
+    playMusic:'Phát nhạc', tabYt:'YouTube', tabSc:'SoundCloud',
+    notesPh:'Gõ gì đó vào đây…\nCứ tự nhiên như đang nghĩ thôi.', exportNotes:'Tải về',
+    settSectPomo:'Pomodoro', settPomoWork:'Tập trung', settMinutes:'phút',
+    settPomoBreak:'Nghỉ ngắn', settPomoLong:'Nghỉ dài', settAfter4:'sau 4 hiệp',
+    settSectDisplay:'Hiển thị', settBlur:'Blur nền khi chạy',
+    settDim:'Độ tối nền mặc định', settDimSub:'ảnh nền khi chưa chạy',
+    settOffset:'Vị trí đồng hồ', settOffsetSub:'từ giữa',
+    settSectInterface:'Giao diện', settLang:'Ngôn ngữ', settLangSub:'giao diện',
+    settFont:'Font chữ', settFontSub:'toàn bộ giao diện',
+    fontDefault:'Mặc định',
+    settSectVideoBg:'Nền video', settYtBg:'YouTube làm nền', settYtBgSub:'video lặp im lặng',
+    ytBgPh:'Dán link YouTube vào đây…', applyVideoBg:'Áp dụng video nền', clearVideoBg:'Xóa video nền',
+    breakBadge:'Giải lao', notifDismiss:'Tiếp tục thôi',
+    langCurrent:'Tiếng Việt',
+    // Dynamic
+    start:'Bắt đầu', reset:'Đặt lại', pause:'Tạm dừng', resume:'Tiếp tục', stop:'Dừng',
+    countdownLbl:'Đếm ngược', countdownSub:'Đặt thời gian bên dưới', countingSub:'Đang đếm ngược',
+    pomoLbl:'Pomodoro', focusSub:'Hiệp {n} — Tập trung',
+    shortBreakSub:'Nghỉ ngắn — Đứng dậy đi', longBreakSub:'Nghỉ dài — Thở sâu',
+    fpFocus:'tập trung', fpBreak:'giải lao', fpCountdown:'đếm ngược',
+    notifPomoTitle:'Hiệp {n} xong!', notifBreakDone:'Giải lao xong!',
+    notifBreakMsg:'Tâm trí tươi mới — hãy bước vào hiệp tiếp theo.',
+    notifLongBreak:'\n\nBạn xứng đáng với một giải lao dài.',
+    notifDoneTitle:'Hoàn thành!', wordUnit:' từ',
+  },
+  en: {
+    navClock:'Current Time', navCountdown:'Countdown', navPomo:'Pomodoro',
+    ncdLeft:'Only', ncdTarget:'Until Exam',
+    panelBg:'Background', panelMusic:'Music', panelNotes:'Notes', panelSettings:'Settings',
+    dropZone:'Drag & drop image here', dropZoneSub:'or click to choose from device',
+    bgUrlPh:'Or paste image URL here…', applyLink:'Apply link', clearBg:'Clear background',
+    ytPh:'Paste YouTube link / playlist…', scPh:'Paste SoundCloud link / playlist…',
+    playMusic:'Play', tabYt:'YouTube', tabSc:'SoundCloud',
+    notesPh:'Type something here…\nJust think out loud.', exportNotes:'Export',
+    settSectPomo:'Pomodoro', settPomoWork:'Focus', settMinutes:'minutes',
+    settPomoBreak:'Short Break', settPomoLong:'Long Break', settAfter4:'after 4 rounds',
+    settSectDisplay:'Display', settBlur:'Blur while running',
+    settDim:'Background dim', settDimSub:'before timer starts',
+    settOffset:'Clock position', settOffsetSub:'from center',
+    settSectInterface:'Interface', settLang:'Language', settLangSub:'interface',
+    settFont:'Font', settFontSub:'entire interface',
+    fontDefault:'Default',
+    settSectVideoBg:'Video Background', settYtBg:'YouTube Background', settYtBgSub:'silent loop',
+    ytBgPh:'Paste YouTube link here…', applyVideoBg:'Apply video', clearVideoBg:'Clear video',
+    breakBadge:'Break', notifDismiss:'Continue',
+    langCurrent:'English',
+    // Dynamic
+    start:'Start', reset:'Reset', pause:'Pause', resume:'Resume', stop:'Stop',
+    countdownLbl:'Countdown', countdownSub:'Set time below', countingSub:'Counting down',
+    pomoLbl:'Pomodoro', focusSub:'Round {n} — Focus',
+    shortBreakSub:'Short break — Stand up', longBreakSub:'Long break — Breathe',
+    fpFocus:'focus', fpBreak:'break', fpCountdown:'countdown',
+    notifPomoTitle:'Round {n} done!', notifBreakDone:'Break over!',
+    notifBreakMsg:'Fresh mind — step into the next round.',
+    notifLongBreak:'\n\nYou deserve a long break.',
+    notifDoneTitle:'Done!', wordUnit:' words',
+  }
+};
+function t(key, p) {
+  let s = (TRANS[lang] || TRANS.vi)[key] || TRANS.vi[key] || key;
+  if (p) Object.keys(p).forEach(k => s = s.replace('{'+k+'}', p[k]));
+  return s;
+}
+function applyLang() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    el.placeholder = t(el.dataset.i18nPh);
+  });
+}
+function setLang(isEn) {
+  lang = isEn ? 'en' : 'vi';
+  document.getElementById('lang-label').textContent = t('langCurrent');
+  applyLang();
+  render(); // re-render dynamic strings
 }
 
 /* ── FONT SELECTOR ── */
