@@ -282,6 +282,7 @@ function setFont(name, btn) {
     td.style.fontStyle = '';
     td.style.letterSpacing = '';
   }
+  savePrefs();
 }
 
 /* ── QUOTES ── */
@@ -1649,6 +1650,7 @@ function setLang(isEn) {
   // Update touch hint nếu đang bật
   updateTouchHint();
   render();
+  savePrefs();
 }
 
 /* ── CONSTANTS ── */
@@ -2051,6 +2053,7 @@ function applyBg(url) {
   document.getElementById('fp-bg').style.backgroundImage = 'url("' + url + '")';
   // Sync notification backdrop
   document.documentElement.style.setProperty('--notif-bg-img', 'url("' + url + '")');
+  savePrefs();
 }
 function applyBgUrl() {
   const url = document.getElementById('bg-url-input').value.trim();
@@ -2063,6 +2066,7 @@ function clearBg() {
   document.getElementById('fp-bg').style.backgroundImage = '';
   document.getElementById('bg-url-input').value = '';
   document.documentElement.style.removeProperty('--notif-bg-img');
+  savePrefs();
 }
 function handleDrop(e) {
   e.preventDefault();
@@ -2099,12 +2103,14 @@ function applyYtBg() {
   document.getElementById('yt-bg-wrap').classList.add('active');
   // Dim main bg when yt bg is active
   document.getElementById('bg-layer').style.opacity = '0';
+  savePrefs();
 }
 function clearYtBg() {
   document.getElementById('yt-bg-iframe').src = '';
   document.getElementById('yt-bg-wrap').classList.remove('active');
   document.getElementById('bg-layer').style.opacity = '';
   document.getElementById('yt-bg-input').value = '';
+  savePrefs();
 }
 
 /* ── MUSIC TABS ── */
@@ -2417,6 +2423,7 @@ function setTouchMode(on) {
     if (tapTimer) { clearTimeout(tapTimer); tapTimer = null; }
   }
   updateTouchHint();
+  savePrefs();
 }
 
 function updateTouchHint() {
@@ -2508,6 +2515,77 @@ document.addEventListener('pointerdown', e => {
   });
 })();
 render();
+loadPrefs();
+
+/* ── PREFERENCES PERSISTENCE ── */
+const PREFS_KEY = 'focus-prefs';
+
+function savePrefs() {
+  try {
+    const prefs = {
+      lang,
+      font: document.querySelector('.font-opt.active')?.id?.replace('font-','') || 'default',
+      touchMode,
+      bgUrl: (() => {
+        const bg = document.getElementById('bg-layer').style.backgroundImage;
+        // Không lưu base64 (quá nặng) — chỉ lưu http/https URL
+        if (!bg || bg === 'none') return '';
+        const m = bg.match(/url\("?(https?:[^")]+)"?\)/);
+        return m ? m[1] : '';
+      })(),
+      ytBgUrl: document.getElementById('yt-bg-input')?.value || '',
+      ytBgActive: document.getElementById('yt-bg-toggle')?.checked || false,
+    };
+    localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+  } catch(e) {}
+}
+
+function loadPrefs() {
+  try {
+    const prefs = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
+
+    // Lang
+    if (prefs.lang === 'en') {
+      lang = 'en';
+      const tog = document.getElementById('lang-toggle');
+      if (tog) tog.checked = true;
+      document.documentElement.lang = 'en';
+      applyLang();
+    }
+
+    // Font
+    if (prefs.font && prefs.font !== 'default') {
+      const btn = document.getElementById('font-' + prefs.font);
+      if (btn) setFont(prefs.font, btn);
+    }
+
+    // Touch mode
+    if (prefs.touchMode) {
+      touchMode = true;
+      document.body.classList.add('touch-mode');
+      const tog = document.getElementById('touch-mode-toggle');
+      if (tog) tog.checked = true;
+      updateTouchHint();
+    }
+
+    // Background URL
+    if (prefs.bgUrl) {
+      applyBg(prefs.bgUrl);
+      const inp = document.getElementById('bg-url-input');
+      if (inp) inp.value = prefs.bgUrl;
+    }
+
+    // YouTube background
+    if (prefs.ytBgActive && prefs.ytBgUrl) {
+      const tog = document.getElementById('yt-bg-toggle');
+      if (tog) { tog.checked = true; toggleYtBg(true); }
+      const inp = document.getElementById('yt-bg-input');
+      if (inp) inp.value = prefs.ytBgUrl;
+      applyYtBg();
+    }
+  } catch(e) {}
+}
+
 
 /* ── CLOCK DIM MODE ── */
 function toggleClockDim() {
