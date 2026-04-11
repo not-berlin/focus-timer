@@ -257,105 +257,6 @@ body.timer-running #bg-layer { transform: scale(1.06); }
   white-space: nowrap;
 }
 
-/* ── I18N SYSTEM ── */
-const TRANS = {
-  vi: {
-    navClock:'Giờ hiện tại', navCountdown:'Đếm ngược', navPomo:'Pomodoro',
-    ncdLeft:'Chỉ còn', ncdTarget:'Là thi THPTQG',
-    panelBg:'Hình nền', panelMusic:'Nhạc nền', panelNotes:'Ghi chú', panelSettings:'Cài đặt',
-    dropZone:'Kéo thả ảnh vào đây', dropZoneSub:'hoặc nhấn để chọn từ máy',
-    bgUrlPh:'Hoặc dán link ảnh vào đây…', applyLink:'Áp dụng link', clearBg:'Xóa hình nền',
-    ytPh:'Dán link YouTube / playlist…', scPh:'Dán link SoundCloud / playlist…',
-    playMusic:'Phát nhạc', tabYt:'YouTube', tabSc:'SoundCloud',
-    notesPh:'Gõ gì đó vào đây…\nCứ tự nhiên như đang nghĩ thôi.', exportNotes:'Tải về',
-    settSectPomo:'Pomodoro', settPomoWork:'Tập trung', settMinutes:'phút',
-    settPomoBreak:'Nghỉ ngắn', settPomoLong:'Nghỉ dài', settAfter4:'sau 4 hiệp',
-    settSectDisplay:'Hiển thị', settBlur:'Blur nền khi chạy',
-    settDim:'Độ tối nền mặc định', settDimSub:'ảnh nền khi chưa chạy',
-    settOffset:'Vị trí đồng hồ', settOffsetSub:'từ giữa',
-    settSectInterface:'Giao diện', settLang:'Ngôn ngữ', settLangSub:'giao diện',
-    settFont:'Font chữ', settFontSub:'toàn bộ giao diện',
-    fontDefault:'Mặc định',
-    settSectVideoBg:'Nền video', settYtBg:'YouTube làm nền', settYtBgSub:'video lặp im lặng',
-    ytBgPh:'Dán link YouTube vào đây…', applyVideoBg:'Áp dụng video nền', clearVideoBg:'Xóa video nền',
-    breakBadge:'Giải lao', notifDismiss:'Tiếp tục thôi',
-    langCurrent:'Tiếng Việt',
-    // Dynamic
-    start:'Bắt đầu', reset:'Đặt lại', pause:'Tạm dừng', resume:'Tiếp tục', stop:'Dừng',
-    countdownLbl:'Đếm ngược', countdownSub:'Đặt thời gian bên dưới', countingSub:'Đang đếm ngược',
-    pomoLbl:'Pomodoro', focusSub:'Hiệp {n} — Tập trung',
-    shortBreakSub:'Nghỉ ngắn — Đứng dậy đi', longBreakSub:'Nghỉ dài — Thở sâu',
-    fpFocus:'tập trung', fpBreak:'giải lao', fpCountdown:'đếm ngược',
-    notifPomoTitle:'Hiệp {n} xong!', notifBreakDone:'Giải lao xong!',
-    notifBreakMsg:'Tâm trí tươi mới — hãy bước vào hiệp tiếp theo.',
-    notifLongBreak:'\n\nBạn xứng đáng với một giải lao dài.',
-    notifDoneTitle:'Hoàn thành!', wordUnit:' từ',
-    settTouchMode:'Chế độ chạm',
-    settTouchModeSub:'1 chạm = bắt đầu/dừng · 2 chạm = đặt lại',
-  },
-  en: {
-    navClock:'Current Time', navCountdown:'Countdown', navPomo:'Pomodoro',
-    ncdLeft:'Only', ncdTarget:'Until Exam',
-    panelBg:'Background', panelMusic:'Music', panelNotes:'Notes', panelSettings:'Settings',
-    dropZone:'Drag & drop image here', dropZoneSub:'or click to choose from device',
-    bgUrlPh:'Or paste image URL here…', applyLink:'Apply link', clearBg:'Clear background',
-    ytPh:'Paste YouTube link / playlist…', scPh:'Paste SoundCloud link / playlist…',
-    playMusic:'Play', tabYt:'YouTube', tabSc:'SoundCloud',
-    notesPh:'Type something here…\nJust think out loud.', exportNotes:'Export',
-    settSectPomo:'Pomodoro', settPomoWork:'Focus', settMinutes:'minutes',
-    settPomoBreak:'Short Break', settPomoLong:'Long Break', settAfter4:'after 4 rounds',
-    settSectDisplay:'Display', settBlur:'Blur while running',
-    settDim:'Background dim', settDimSub:'before timer starts',
-    settOffset:'Clock position', settOffsetSub:'from center',
-    settSectInterface:'Interface', settLang:'Language', settLangSub:'interface',
-    settFont:'Font', settFontSub:'entire interface',
-    fontDefault:'Default',
-    settSectVideoBg:'Video Background', settYtBg:'YouTube Background', settYtBgSub:'silent loop',
-    ytBgPh:'Paste YouTube link here…', applyVideoBg:'Apply video', clearVideoBg:'Clear video',
-    breakBadge:'Break', notifDismiss:'Continue',
-    langCurrent:'English',
-    // Dynamic
-    start:'Start', reset:'Reset', pause:'Pause', resume:'Resume', stop:'Stop',
-    countdownLbl:'Countdown', countdownSub:'Set time below', countingSub:'Counting down',
-    pomoLbl:'Pomodoro', focusSub:'Round {n} — Focus',
-    shortBreakSub:'Short break — Stand up', longBreakSub:'Long break — Breathe',
-    fpFocus:'focus', fpBreak:'break', fpCountdown:'countdown',
-    notifPomoTitle:'Round {n} done!', notifBreakDone:'Break over!',
-    notifBreakMsg:'Fresh mind — step into the next round.',
-    notifLongBreak:'\n\nYou deserve a long break.',
-    notifDoneTitle:'Done!', wordUnit:' words',
-    settTouchMode:'Touch Mode',
-    settTouchModeSub:'1 tap = start/pause · 2 taps = reset',
-  }
-};
-function t(key, p) {
-  let s = (TRANS[lang] || TRANS.vi)[key] || TRANS.vi[key] || key;
-  if (p) Object.keys(p).forEach(k => s = s.replace('{'+k+'}', p[k]));
-  return s;
-}
-function applyLang() {
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    el.textContent = t(el.dataset.i18n);
-  });
-  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
-    el.placeholder = t(el.dataset.i18nPh);
-  });
-}
-function setLang(isEn) {
-  lang = isEn ? 'en' : 'vi';
-  document.getElementById('lang-label').textContent = t('langCurrent');
-  applyLang();
-  // Cập nhật lang attr của <html>
-  document.documentElement.lang = isEn ? 'en' : 'vi';
-  // Re-render slider display values với đơn vị mới
-  Object.keys(settings).forEach(k => {
-    const el = document.getElementById('v-' + k);
-    if (el) updateSetting(k, settings[k]);
-  });
-  // Update touch hint nếu đang bật
-  updateTouchHint();
-  render();
-}
 
 /* ── FONT SELECTOR ── */
 const fontMap = {
@@ -1649,6 +1550,107 @@ body.touch-mode #touch-hint { display: block; }
 </div>
 
 <script>
+
+/* ── I18N SYSTEM ── */
+const TRANS = {
+  vi: {
+    navClock:'Giờ hiện tại', navCountdown:'Đếm ngược', navPomo:'Pomodoro',
+    ncdLeft:'Chỉ còn', ncdTarget:'Là thi THPTQG',
+    panelBg:'Hình nền', panelMusic:'Nhạc nền', panelNotes:'Ghi chú', panelSettings:'Cài đặt',
+    dropZone:'Kéo thả ảnh vào đây', dropZoneSub:'hoặc nhấn để chọn từ máy',
+    bgUrlPh:'Hoặc dán link ảnh vào đây…', applyLink:'Áp dụng link', clearBg:'Xóa hình nền',
+    ytPh:'Dán link YouTube / playlist…', scPh:'Dán link SoundCloud / playlist…',
+    playMusic:'Phát nhạc', tabYt:'YouTube', tabSc:'SoundCloud',
+    notesPh:'Gõ gì đó vào đây…\nCứ tự nhiên như đang nghĩ thôi.', exportNotes:'Tải về',
+    settSectPomo:'Pomodoro', settPomoWork:'Tập trung', settMinutes:'phút',
+    settPomoBreak:'Nghỉ ngắn', settPomoLong:'Nghỉ dài', settAfter4:'sau 4 hiệp',
+    settSectDisplay:'Hiển thị', settBlur:'Blur nền khi chạy',
+    settDim:'Độ tối nền mặc định', settDimSub:'ảnh nền khi chưa chạy',
+    settOffset:'Vị trí đồng hồ', settOffsetSub:'từ giữa',
+    settSectInterface:'Giao diện', settLang:'Ngôn ngữ', settLangSub:'giao diện',
+    settFont:'Font chữ', settFontSub:'toàn bộ giao diện',
+    fontDefault:'Mặc định',
+    settSectVideoBg:'Nền video', settYtBg:'YouTube làm nền', settYtBgSub:'video lặp im lặng',
+    ytBgPh:'Dán link YouTube vào đây…', applyVideoBg:'Áp dụng video nền', clearVideoBg:'Xóa video nền',
+    breakBadge:'Giải lao', notifDismiss:'Tiếp tục thôi',
+    langCurrent:'Tiếng Việt',
+    // Dynamic
+    start:'Bắt đầu', reset:'Đặt lại', pause:'Tạm dừng', resume:'Tiếp tục', stop:'Dừng',
+    countdownLbl:'Đếm ngược', countdownSub:'Đặt thời gian bên dưới', countingSub:'Đang đếm ngược',
+    pomoLbl:'Pomodoro', focusSub:'Hiệp {n} — Tập trung',
+    shortBreakSub:'Nghỉ ngắn — Đứng dậy đi', longBreakSub:'Nghỉ dài — Thở sâu',
+    fpFocus:'tập trung', fpBreak:'giải lao', fpCountdown:'đếm ngược',
+    notifPomoTitle:'Hiệp {n} xong!', notifBreakDone:'Giải lao xong!',
+    notifBreakMsg:'Tâm trí tươi mới — hãy bước vào hiệp tiếp theo.',
+    notifLongBreak:'\n\nBạn xứng đáng với một giải lao dài.',
+    notifDoneTitle:'Hoàn thành!', wordUnit:' từ',
+    settTouchMode:'Chế độ chạm',
+    settTouchModeSub:'1 chạm = bắt đầu/dừng · 2 chạm = đặt lại',
+  },
+  en: {
+    navClock:'Current Time', navCountdown:'Countdown', navPomo:'Pomodoro',
+    ncdLeft:'Only', ncdTarget:'Until Exam',
+    panelBg:'Background', panelMusic:'Music', panelNotes:'Notes', panelSettings:'Settings',
+    dropZone:'Drag & drop image here', dropZoneSub:'or click to choose from device',
+    bgUrlPh:'Or paste image URL here…', applyLink:'Apply link', clearBg:'Clear background',
+    ytPh:'Paste YouTube link / playlist…', scPh:'Paste SoundCloud link / playlist…',
+    playMusic:'Play', tabYt:'YouTube', tabSc:'SoundCloud',
+    notesPh:'Type something here…\nJust think out loud.', exportNotes:'Export',
+    settSectPomo:'Pomodoro', settPomoWork:'Focus', settMinutes:'minutes',
+    settPomoBreak:'Short Break', settPomoLong:'Long Break', settAfter4:'after 4 rounds',
+    settSectDisplay:'Display', settBlur:'Blur while running',
+    settDim:'Background dim', settDimSub:'before timer starts',
+    settOffset:'Clock position', settOffsetSub:'from center',
+    settSectInterface:'Interface', settLang:'Language', settLangSub:'interface',
+    settFont:'Font', settFontSub:'entire interface',
+    fontDefault:'Default',
+    settSectVideoBg:'Video Background', settYtBg:'YouTube Background', settYtBgSub:'silent loop',
+    ytBgPh:'Paste YouTube link here…', applyVideoBg:'Apply video', clearVideoBg:'Clear video',
+    breakBadge:'Break', notifDismiss:'Continue',
+    langCurrent:'English',
+    // Dynamic
+    start:'Start', reset:'Reset', pause:'Pause', resume:'Resume', stop:'Stop',
+    countdownLbl:'Countdown', countdownSub:'Set time below', countingSub:'Counting down',
+    pomoLbl:'Pomodoro', focusSub:'Round {n} — Focus',
+    shortBreakSub:'Short break — Stand up', longBreakSub:'Long break — Breathe',
+    fpFocus:'focus', fpBreak:'break', fpCountdown:'countdown',
+    notifPomoTitle:'Round {n} done!', notifBreakDone:'Break over!',
+    notifBreakMsg:'Fresh mind — step into the next round.',
+    notifLongBreak:'\n\nYou deserve a long break.',
+    notifDoneTitle:'Done!', wordUnit:' words',
+    settTouchMode:'Touch Mode',
+    settTouchModeSub:'1 tap = start/pause · 2 taps = reset',
+  }
+};
+function t(key, p) {
+  let s = (TRANS[lang] || TRANS.vi)[key] || TRANS.vi[key] || key;
+  if (p) Object.keys(p).forEach(k => s = s.replace('{'+k+'}', p[k]));
+  return s;
+}
+function applyLang() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    el.placeholder = t(el.dataset.i18nPh);
+  });
+}
+function setLang(isEn) {
+  lang = isEn ? 'en' : 'vi';
+  document.getElementById('lang-label').textContent = t('langCurrent');
+  applyLang();
+  // Cập nhật lang attr của <html>
+  document.documentElement.lang = isEn ? 'en' : 'vi';
+  // Re-render slider display values với đơn vị mới
+  Object.keys(settings).forEach(k => {
+    const el = document.getElementById('v-' + k);
+    if (el) updateSetting(k, settings[k]);
+  });
+  // Update touch hint nếu đang bật
+  updateTouchHint();
+  render();
+}
+
 /* ── CONSTANTS ── */
 const QUOTES = [
   { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
