@@ -52,6 +52,16 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Lớp Font đè lên cho Setting Font */
+body.font-mono, body.font-mono * {
+  font-family: 'DM Mono', monospace !important;
+  font-variation-settings: normal !important;
+}
+body.font-serif, body.font-serif * {
+  font-family: 'DM Serif Display', serif !important;
+  font-variation-settings: normal !important;
+}
+
 /* ── BACKGROUND ── */
 #bg-layer {
   position: fixed; inset: 0;
@@ -91,12 +101,10 @@ body.timer-running #bg-layer { transform: scale(1.06); }
 #bg-new::after {
   content: '';
   position: absolute; inset: 0;
-  /* Độ tối mặc định y hệt thằng bg-layer */
   background: rgba(0,0,0,0.42); 
   transition: background 1.2s ease;
 }
 
-/* Kế thừa luôn độ mờ và độ tối khi bấm chạy giờ (focus mode) */
 #bg-new.focused::after { 
   background: rgba(0,0,0,var(--focus-dim)); 
 }
@@ -150,18 +158,6 @@ body.timer-running #bg-layer { transform: scale(1.06); }
   user-select: none;
 }
 
-/* ── GLASS MIXIN ── */
-.glass {
-  backdrop-filter: blur(14px) saturate(180%);
-  -webkit-backdrop-filter: blur(14px) saturate(180%);
-  background: var(--glass-bg);
-  border-top: 1px solid var(--glass-border-t);
-  border-left: 1px solid var(--glass-border-l);
-  border-right: 1px solid var(--glass-border-r);
-  border-bottom: 1px solid var(--glass-border-b);
-  box-shadow: var(--glass-shadow);
-}
-
 /* ── NAV ── */
 #nav {
   position: fixed; top: 24px; left: 24px;
@@ -178,7 +174,6 @@ body.timer-running #bg-layer { transform: scale(1.06); }
   gap: 6px;
   align-items: center;
 }
-/* Logo SVG */
 .nav-logo {
   width: 32px; height: 32px;
   flex-shrink: 0;
@@ -257,34 +252,6 @@ body.timer-running #bg-layer { transform: scale(1.06); }
   white-space: nowrap;
 }
 
-
-/* ── FONT SELECTOR ── */
-const fontMap = {
-  default: "'SF Pro', 'DM Mono', sans-serif",
-  mono: "'DM Mono', monospace",
-  serif: "'DM Serif Display', serif",
-};
-function setFont(name, btn) {
-  document.querySelectorAll('.font-opt').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.body.style.fontFamily = fontMap[name];
-  const td = document.getElementById('time-display');
-  if (name === 'serif') {
-    td.style.fontFamily = "'DM Serif Display', serif";
-    td.style.fontStyle = 'italic';
-    td.style.letterSpacing = '-0.01em';
-  } else if (name === 'mono') {
-    td.style.fontFamily = "'DM Mono', monospace";
-    td.style.fontStyle = '';
-    td.style.letterSpacing = '-0.02em';
-  } else {
-    td.style.fontFamily = '';
-    td.style.fontStyle = '';
-    td.style.letterSpacing = '';
-  }
-  savePrefs();
-}
-
 /* ── QUOTES ── */
 #quote-box {
   position: fixed; top: 24px; right: 24px;
@@ -330,9 +297,15 @@ function setFont(name, btn) {
   line-height: 1;
   letter-spacing: -0.03em;
   color: var(--text);
-  transition: color 0.4s ease;
+  scale: 1;
+  transition: color 0.4s ease, scale 0.8s cubic-bezier(0.25,0.46,0.45,0.94);
   font-feature-settings: 'tnum' 1;
 }
+
+body.clock-dim #time-display {
+  scale: 1.12; 
+}
+
 #time-display.tick { animation: tickAnim 0.28s cubic-bezier(0.22,1,0.36,1); }
 #time-display.running { color: var(--accent); }
 #time-display.warning { color: var(--danger); }
@@ -343,14 +316,12 @@ function setFont(name, btn) {
   100% { opacity: 1;    transform: scale(1) translateY(0); filter: blur(0); }
 }
 
-/* Digit change highlight — colon pulse khi đổi giây */
 @keyframes colonPulse {
   0%   { opacity: 1; transform: scaleY(1); }
   40%  { opacity: 0.18; transform: scaleY(0.7); }
   100% { opacity: 1; transform: scaleY(1); }
 }
 
-/* colon blink */
 .time-colon {
   display: inline-block;
   animation: colonBlink 1s step-end infinite;
@@ -448,8 +419,8 @@ body.timer-running .time-colon { animation: none; opacity: 1; }
   margin-top: 22px;
 }
 .time-input {
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
   background: rgba(255,255,255,0.05);
   border-top: 1px solid rgba(255,255,255,0.2);
   border-left: 1px solid rgba(255,255,255,0.12);
@@ -577,17 +548,42 @@ body.timer-running #btn-zen:hover { opacity: 1; }
 .panel-close {
   width: 26px; height: 26px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.12);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  background: var(--glass-bg);
+  border-top: 1px solid var(--glass-border-t);
+  border-left: 1px solid var(--glass-border-l);
+  border-right: 1px solid var(--glass-border-r);
+  border-bottom: 1px solid var(--glass-border-b);
+  box-shadow: var(--glass-shadow);
   color: var(--muted);
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   font-size: 13px;
   transition: all 0.2s;
-  backdrop-filter: blur(8px);
   flex-shrink: 0;
 }
-.panel-close:hover { background: rgba(255,255,255,0.18); color: var(--text); }
+.panel-close:hover { 
+  background: linear-gradient(135deg,rgba(255,255,255,0.2),rgba(255,255,255,0.08)); 
+  color: var(--text); 
+}
+
+/* Nút tải về đặc biệt trong Notes */
+.export-btn {
+  border-radius: 8px;
+  width: auto;
+  padding: 0 10px;
+  background: linear-gradient(135deg, rgba(168,196,184,0.15), rgba(168,196,184,0.05));
+  border-top-color: rgba(168,196,184,0.35);
+  border-left-color: rgba(168,196,184,0.2);
+  border-right-color: rgba(168,196,184,0.05);
+  border-bottom-color: rgba(168,196,184,0.05);
+  color: var(--accent2);
+  font-size: 11px;
+}
+.export-btn:hover {
+  background: linear-gradient(135deg, rgba(168,196,184,0.25), rgba(168,196,184,0.1));
+}
 
 /* BG Panel */
 #bg-panel { bottom: 80px; left: 24px; width: 280px; }
@@ -609,7 +605,8 @@ body.timer-running #btn-zen:hover { opacity: 1; }
 }
 .panel-input {
   width: 100%;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
   background: rgba(255,255,255,0.05);
   border-top: 1px solid rgba(255,255,255,0.18);
   border-left: 1px solid rgba(255,255,255,0.12);
@@ -630,8 +627,8 @@ body.timer-running #btn-zen:hover { opacity: 1; }
 }
 .panel-input::placeholder { color: var(--muted); }
 .small-btn {
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
   background: var(--glass-bg);
   border-top: 1px solid var(--glass-border-t);
   border-left: 1px solid var(--glass-border-l);
@@ -709,7 +706,6 @@ body.timer-running #btn-zen:hover { opacity: 1; }
 .setting-sublabel { font-size: 10px; color: var(--muted); margin-top: 2px; letter-spacing: 0.05em; }
 .slider-wrap { display: flex; align-items: center; gap: 10px; }
 input[type=range] {
-  -webkit-appearance: none;
   width: 100px; height: 3px;
   background: rgba(255,255,255,0.12);
   border-radius: 2px;
@@ -756,7 +752,8 @@ input[type=range]::-webkit-slider-thumb {
 .toggle-track {
   position: absolute; inset: 0;
   border-radius: 10px;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
   background: rgba(255,255,255,0.1);
   border: 1px solid rgba(255,255,255,0.15);
   transition: all 0.25s;
@@ -782,7 +779,8 @@ input[type=range]::-webkit-slider-thumb {
 #yt-bg-section { margin-top: 10px; }
 #yt-bg-input {
   width: 100%;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
   background: rgba(255,255,255,0.05);
   border-top: 1px solid rgba(255,255,255,0.18);
   border-left: 1px solid rgba(255,255,255,0.12);
@@ -871,9 +869,13 @@ input[type=range]::-webkit-slider-thumb {
   top: 8px; right: 8px;
   width: 22px; height: 22px;
   border-radius: 50%;
-  background: rgba(0,0,0,0.5);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,0.15);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  background: rgba(0,0,0,0.4);
+  border-top: 1px solid rgba(255,255,255,0.2);
+  border-left: 1px solid rgba(255,255,255,0.1);
+  border-right: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
   color: rgba(255,255,255,0.6);
   font-size: 12px;
   display: flex; align-items: center; justify-content: center;
@@ -911,7 +913,6 @@ input[type=range]::-webkit-slider-thumb {
 #notification {
   background-color: rgba(0,0,0,0.5);
   position: fixed; inset: 0;
-  /* Luôn dùng flex, nhưng ẩn bằng visibility và opacity */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -919,7 +920,6 @@ input[type=range]::-webkit-slider-thumb {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  /* Thêm blur nền */
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   transition: opacity 0.4s ease, visibility 0.4s ease;
@@ -944,7 +944,6 @@ input[type=range]::-webkit-slider-thumb {
   z-index: 0;
 }
 
-/* Khi có class show: Hiện lên từ từ */
 #notification.show { 
   opacity: 1; 
   visibility: visible;
@@ -967,25 +966,21 @@ input[type=range]::-webkit-slider-thumb {
   text-align: center;
   max-width: 360px;
   width: calc(100vw - 48px);
-  
-  /* Thay animation bằng transition để tắt mở đều mượt */
   transform: scale(0.85);
   transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
 }
 
-/* Khi hiện lên, thẻ bự ra một chút */
 #notification.show .notif-card {
   transform: scale(1);
 }
 
-/* Các phần text bên trong giữ nguyên */
 .notif-icon { font-size: 40px; margin-bottom: 14px; }
 .notif-title { font-family: 'DM Serif Display', serif; font-size: 24px; color: var(--accent); margin-bottom: 10px; }
 .notif-msg { font-family: 'SF Pro', sans-serif; font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.75; margin-bottom: 24px; white-space: pre-line; }
 
 #notif-dismiss {
-  /* Giữ nguyên style nút của bạn... */
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
   background: linear-gradient(135deg, rgba(232,213,176,0.2), rgba(232,213,176,0.07));
   border-top: 1px solid rgba(232,213,176,0.45);
   border-left: 1px solid rgba(232,213,176,0.28);
@@ -1099,8 +1094,14 @@ body.touch-mode #touch-hint { display: block; }
 }
 .font-opt {
   flex: 1;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  background: var(--glass-bg);
+  border-top: 1px solid var(--glass-border-t);
+  border-left: 1px solid var(--glass-border-l);
+  border-right: 1px solid var(--glass-border-r);
+  border-bottom: 1px solid var(--glass-border-b);
+  box-shadow: var(--glass-shadow);
   border-radius: 8px;
   padding: 7px 6px;
   color: var(--muted);
@@ -1110,14 +1111,15 @@ body.touch-mode #touch-hint { display: block; }
   transition: all 0.2s;
   letter-spacing: 0.04em;
 }
-.font-opt:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+.font-opt:hover { background: linear-gradient(135deg,rgba(255,255,255,0.2),rgba(255,255,255,0.08)); color: var(--text); }
 .font-opt.active {
   background: linear-gradient(135deg, rgba(232,213,176,0.2), rgba(232,213,176,0.06));
-  border-color: rgba(232,213,176,0.4);
+  border-top-color: rgba(232,213,176,0.4);
+  border-left-color: rgba(232,213,176,0.25);
+  border-right-color: rgba(232,213,176,0.05);
+  border-bottom-color: rgba(232,213,176,0.05);
   color: var(--accent);
 }
-.font-opt.opt-mono { font-family: 'DM Mono', monospace; }
-.font-opt.opt-serif { font-family: 'DM Serif Display', serif; font-style: italic; }
 
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -1126,7 +1128,7 @@ body.touch-mode #touch-hint { display: block; }
 #file-input { display: none; }
 
 /* ── BUTTON INTERACTION EFFECTS ── */
-.ctrl-btn, .nav-btn, .tool-btn, .small-btn, #notif-dismiss, .panel-close, .music-tab {
+.ctrl-btn, .nav-btn, .tool-btn, .small-btn, #notif-dismiss, .panel-close, .music-tab, .font-opt {
   position: relative;
   overflow: hidden;
   transform: scale(1);
@@ -1136,7 +1138,7 @@ body.touch-mode #touch-hint { display: block; }
 }
 .ctrl-btn:active, .nav-btn:active, .tool-btn:active,
 .small-btn:active, #notif-dismiss:active, .panel-close:active,
-.music-tab:active {
+.music-tab:active, .font-opt:active {
   transform: scale(0.93) !important;
   filter: brightness(0.88);
   transition: transform 0.07s ease, filter 0.07s ease !important;
@@ -1157,10 +1159,14 @@ body.touch-mode #touch-hint { display: block; }
 /* music tab style */
 .music-tab {
   flex: 1;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  background: var(--glass-bg);
+  border-top: 1px solid var(--glass-border-t);
+  border-left: 1px solid var(--glass-border-l);
+  border-right: 1px solid var(--glass-border-r);
+  border-bottom: 1px solid var(--glass-border-b);
+  box-shadow: var(--glass-shadow);
   color: var(--muted);
   font-family: 'SF Pro', sans-serif;
   font-size: 11px;
@@ -1168,10 +1174,14 @@ body.touch-mode #touch-hint { display: block; }
   padding: 7px 10px;
   border-radius: 12px;
   cursor: pointer;
+  transition: all 0.2s;
 }
 .music-tab.active {
   background: linear-gradient(135deg, rgba(168,196,184,0.2), rgba(168,196,184,0.06));
-  border-color: rgba(168,196,184,0.4);
+  border-top-color: rgba(168,196,184,0.4);
+  border-left-color: rgba(168,196,184,0.25);
+  border-right-color: rgba(168,196,184,0.05);
+  border-bottom-color: rgba(168,196,184,0.05);
   color: var(--accent2);
 }
 
@@ -1269,7 +1279,7 @@ body.touch-mode #touch-hint { display: block; }
       <input type="number" class="time-input" id="input-s" min="0" max="59" value="0" placeholder="00">
     </div>
     <div id="controls"></div>
-    <div id="touch-hint">chạm · chạm×2 để đặt lại</div>
+    <div id="touch-hint">chạm = bắt đầu/dừng · chạm×2 = đặt lại</div>
   </div>
 </div>
 <div id="tap-ring"></div>
@@ -1390,7 +1400,7 @@ body.touch-mode #touch-hint { display: block; }
   <div class="panel-title">
     <span data-i18n="panelNotes">Ghi chú</span>
     <div style="display:flex;gap:6px;align-items:center;">
-      <button class="panel-close" onclick="exportNotes()" title="Tải về .txt" style="border-radius:6px;width:auto;padding:0 8px;background:rgba(168,196,184,0.15);color:var(--accent2);font-size:11px;border-color:rgba(168,196,184,0.25);" data-i18n="exportNotes">Tải về</button>
+      <button class="panel-close export-btn" onclick="exportNotes()" title="Tải về .txt" data-i18n="exportNotes">Tải về</button>
       <button class="panel-close" onclick="closePanel('notes-panel','btn-notes')">✕</button>
     </div>
   </div>
@@ -1497,7 +1507,7 @@ body.touch-mode #touch-hint { display: block; }
   <div class="setting-row">
     <div>
       <div class="setting-label" data-i18n="settTouchMode">Chế độ chạm</div>
-      <div class="setting-sublabel" data-i18n="settTouchModeSub">1 chạm = bắt đầu/dừng · 2 chạm = đặt lại</div>
+      <div class="setting-sublabel" data-i18n="settTouchModeSub">chạm = bắt/dừng · chạm×2 = đặt lại</div>
     </div>
     <label class="toggle">
       <input type="checkbox" id="touch-mode-toggle" onchange="setTouchMode(this.checked)">
@@ -1508,7 +1518,7 @@ body.touch-mode #touch-hint { display: block; }
 
   <div class="setting-row" style="margin-bottom:8px;">
     <div>
-      <div class="setting-label">Font chữ</div>
+      <div class="setting-label">Font</div>
       <div class="setting-sublabel" data-i18n="settFontSub">toàn bộ giao diện</div>
     </div>
   </div>
@@ -1569,7 +1579,7 @@ const TRANS = {
     settDim:'Độ tối nền mặc định', settDimSub:'ảnh nền khi chưa chạy',
     settOffset:'Vị trí đồng hồ', settOffsetSub:'từ giữa',
     settSectInterface:'Giao diện', settLang:'Ngôn ngữ', settLangSub:'giao diện',
-    settFont:'Font chữ', settFontSub:'toàn bộ giao diện',
+    settFont:'Font', settFontSub:'toàn bộ giao diện',
     fontDefault:'Mặc định',
     settSectVideoBg:'Nền video', settYtBg:'YouTube làm nền', settYtBgSub:'video lặp im lặng',
     ytBgPh:'Dán link YouTube vào đây…', applyVideoBg:'Áp dụng video nền', clearVideoBg:'Xóa video nền',
@@ -1586,7 +1596,7 @@ const TRANS = {
     notifLongBreak:'\n\nBạn xứng đáng với một giải lao dài.',
     notifDoneTitle:'Hoàn thành!', wordUnit:' từ',
     settTouchMode:'Chế độ chạm',
-    settTouchModeSub:'1 chạm = bắt đầu/dừng · 2 chạm = đặt lại',
+    settTouchModeSub:'chạm = bắt/dừng · chạm×2 = đặt lại',
   },
   en: {
     navClock:'Current Time', navCountdown:'Countdown', navPomo:'Pomodoro',
@@ -1603,7 +1613,7 @@ const TRANS = {
     settDim:'Background dim', settDimSub:'before timer starts',
     settOffset:'Clock position', settOffsetSub:'from center',
     settSectInterface:'Interface', settLang:'Language', settLangSub:'interface',
-    settFont:'Font', settFontSub:'entire interface',
+    settFont:'Set font', settFontSub:'entire interface',
     fontDefault:'Default',
     settSectVideoBg:'Video Background', settYtBg:'YouTube Background', settYtBgSub:'silent loop',
     ytBgPh:'Paste YouTube link here…', applyVideoBg:'Apply video', clearVideoBg:'Clear video',
@@ -1620,7 +1630,7 @@ const TRANS = {
     notifLongBreak:'\n\nYou deserve a long break.',
     notifDoneTitle:'Done!', wordUnit:' words',
     settTouchMode:'Touch Mode',
-    settTouchModeSub:'1 tap = start/pause · 2 taps = reset',
+    settTouchModeSub:'tap = start/pause · 2 taps = reset',
   }
 };
 function t(key, p) {
@@ -1707,8 +1717,8 @@ let lastTimeStr = '';
 let lang = 'vi';
 let clockDimOn = false;
 let touchMode = false;
-let tapTimer = null;
-let tapCount = 0;
+let lastTapTime = 0;
+let tapTimeout = null; // Quản lý thời gian chờ double tap
 
 const settings = {
   'pomo-work': 25, 'pomo-break': 5, 'pomo-long': 15,
@@ -1723,6 +1733,26 @@ try {
 const TARGET_DATE = new Date('2026-06-11T07:00:00');
 
 function pad(n) { return String(n).padStart(2,'0'); }
+
+/* ── FONT SETTINGS (Hàm mới được bổ sung) ── */
+function setFont(type, btn) {
+  // Reset active classes
+  document.querySelectorAll('.font-opt').forEach(b => b.classList.remove('active'));
+  if (btn) {
+    btn.classList.add('active');
+  } else {
+    const el = document.getElementById('font-' + type);
+    if (el) el.classList.add('active');
+  }
+
+  // Áp dụng class vào body
+  document.body.classList.remove('font-mono', 'font-serif');
+  if (type !== 'default') {
+    document.body.classList.add('font-' + type);
+  }
+  
+  savePrefs();
+}
 
 /* ── COUNTDOWN TO TARGET DATE ── */
 function updateNavCountdown() {
@@ -1985,12 +2015,12 @@ function pauseResume() {
   if (running) {
     clearInterval(timerInterval);
     running = false;
-    btn.textContent = t('resume');
+    if (btn) btn.textContent = t('resume');
     setBgFocus(false);
     document.body.classList.remove('timer-running');
   } else {
     running = true;
-    btn.textContent = t('pause');
+    if (btn) btn.textContent = t('pause');
     setBgFocus(true);
     document.body.classList.add('timer-running');
     if (mode === 'countdown') timerInterval = setInterval(tickCountdown, 1000);
@@ -2002,6 +2032,7 @@ function stop() {
   clearInterval(timerInterval);
   clearInterval(clockInterval);
   running = false;
+  currentSecs = 0; // Reset cả thời gian dở dang
   pomoCount = 0;
   setBgFocus(false);
   document.body.classList.remove('timer-running');
@@ -2414,13 +2445,13 @@ function moveFP(cx, cy) {
 }
 function stopDrag() { isDragging = false; fp.style.transition = ''; }
 
-/* ── TOUCH / TAP MODE ── */
+/* ── TOUCH / TAP MODE ── (ĐÃ SỬA LỖI LOGIC TẠI ĐÂY) */
 function setTouchMode(on) {
   touchMode = on;
   document.body.classList.toggle('touch-mode', on);
   if (!on) {
-    tapCount = 0;
-    if (tapTimer) { clearTimeout(tapTimer); tapTimer = null; }
+    lastTapTime = 0;
+    clearTimeout(tapTimeout);
   }
   updateTouchHint();
   savePrefs();
@@ -2431,11 +2462,11 @@ function updateTouchHint() {
   if (!hint) return;
   if (lang === 'en') {
     if (mode === 'clock') hint.textContent = 'tap = dim · hold = fullscreen';
-    else if (running)      hint.textContent = 'tap = pause/resume · double-tap = reset';
-    else                   hint.textContent = 'tap = start · double-tap = reset';
+    else if (running)      hint.textContent = 'tap = pause/resume · 2 taps = reset';
+    else                   hint.textContent = 'tap = start · 2 taps = reset';
   } else {
     if (mode === 'clock') hint.textContent = 'chạm = tối mờ · giữ = toàn màn hình';
-    else if (running)     hint.textContent = 'chạm = dừng/tiếp · chạm×2 = đặt lại';
+    else if (running || currentSecs > 0) hint.textContent = 'chạm = dừng/tiếp · chạm×2 = đặt lại';
     else                  hint.textContent = 'chạm = bắt đầu · chạm×2 = đặt lại';
   }
 }
@@ -2451,39 +2482,52 @@ function flashTapRing() {
 function handleClockTap(e) {
   if (!touchMode) return;
   if (isDragging) return;
-  // Bỏ qua nếu chạm vào bất kỳ phần tử UI nào (nút, input, panel, nav, toolbar...)
-  // Riêng .time-input (ô nhập giờ/phút/giây đếm ngược) vẫn được chạm bình thường
+  // Bỏ qua nếu chạm vào UI
   if (e.target.closest('.time-input')) return;
   if (e.target.closest('input, button, .ctrl-btn, .panel, #nav, #bottom-left, #bottom-right, #floating-player, #notification, #break-badge, .tool-btn, .nav-btn, .music-tab, .toggle, select, textarea')) return;
+  
   e.preventDefault();
   e.stopPropagation();
 
   flashTapRing();
-  tapCount++;
 
-  if (tapTimer) clearTimeout(tapTimer);
-  tapTimer = setTimeout(() => {
-    const count = tapCount;
-    tapCount = 0;
+  const now = Date.now();
 
-    if (count >= 2) {
-      // Double tap → reset
-      stop();
-    } else {
-      // Single tap
+  // Kiểm tra thời gian giữa 2 lần tap (DOUBLE TAP)
+  if (now - lastTapTime < 300) {
+    // ĐÂY LÀ DOUBLE TAP (RESET)
+    clearTimeout(tapTimeout); // Huỷ bỏ lệnh single tap trước đó
+    lastTapTime = 0; // Đặt lại về 0 để nhận nhịp đập mới
+    if (mode !== 'clock') {
+        stop(); // Reset
+    }
+  } else {
+    // ĐÂY (CÓ THỂ) LÀ SINGLE TAP
+    lastTapTime = now;
+    
+    // Đợi 300ms xem có tap thêm cái nữa không thì mới ra lệnh
+    tapTimeout = setTimeout(() => {
       if (mode === 'clock') {
         toggleClockDim();
-      } else if (!running) {
-        // Not running → start
-        if (mode === 'countdown') startCountdown();
-        else if (mode === 'pomodoro') startPomo();
       } else {
-        // Running → pause/resume
-        pauseResume();
+        if (running) {
+          // Đang chạy => Tạm dừng
+          pauseResume();
+        } else {
+          // Đang không chạy
+          if (currentSecs > 0) {
+            // Đã có thời gian nhưng đang pause => Tiếp tục đếm
+            pauseResume();
+          } else {
+            // Chưa có thời gian (Chưa bắt đầu hoặc vừa bị Reset) => Bắt đầu đếm mới
+            if (mode === 'countdown') startCountdown();
+            else if (mode === 'pomodoro') startPomo();
+          }
+        }
       }
-    }
-    updateTouchHint();
-  }, 260); // wait to detect double-tap
+      updateTouchHint();
+    }, 300);
+  }
 }
 
 // Bind tap trên toàn màn hình — bỏ qua nút, input, panel
