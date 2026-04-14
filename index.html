@@ -32,6 +32,7 @@
   --danger: #c97b6e;
   --focus-blur: 8px;
   --focus-dim: 0.55;
+  --clock-scale: 1;
   /* glass */
   --glass-bg: linear-gradient(135deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.06) 60%, rgba(255,255,255,0.10) 100%);
   --glass-border-t: rgba(255,255,255,0.32);
@@ -60,6 +61,13 @@ body.font-mono, body.font-mono * {
 body.font-serif, body.font-serif * {
   font-family: 'DM Serif Display', serif !important;
   font-variation-settings: normal !important;
+}
+/* Font SF Pro Condensed — chỉ áp dụng cho mặt đồng hồ */
+body.font-condensed #time-display,
+body.font-condensed #fp-time {
+  font-family: 'SF Pro', 'DM Mono', monospace !important;
+  font-variation-settings: 'wdth' 47, 'opsz' 28, 'wght' 120.70000762951095 !important;
+  letter-spacing: -0.01em !important;
 }
 
 /* ── BACKGROUND ── */
@@ -145,17 +153,19 @@ body.timer-running #bg-layer { transform: scale(1.06); }
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   pointer-events: none;
 }
 #app > * { pointer-events: all; }
 
 #clock-display {
   position: relative;
-  top: 50%;
-  transform: translateY(-50%);
   text-align: center;
   user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ── NAV ── */
@@ -285,25 +295,25 @@ body.timer-running #bg-layer { transform: scale(1.06); }
   letter-spacing: 0.2em;
   text-transform: uppercase !important;
   color: var(--muted);
-  margin-bottom: 14px;
+  margin-bottom: 8px;
   height: 16px;
 }
 
 #time-display {
   font-family: 'SF Pro', 'DM Mono', monospace;
   font-variation-settings: 'wdth' 130, 'opsz' 36;
-  font-size: clamp(88px, 15vw, 180px);
+  /* Sử dụng font-size kết hợp calc thay vì scale để tránh lỗi che khuất ngày tháng */
+  font-size: calc(clamp(88px, 15vw, 180px) * var(--clock-scale));
   font-weight: 200;
   line-height: 1;
   letter-spacing: -0.03em;
   color: var(--text);
-  scale: 1;
-  transition: color 0.4s ease, scale 0.8s cubic-bezier(0.25,0.46,0.45,0.94);
+  transition: color 0.4s ease, font-size 0.8s cubic-bezier(0.25,0.46,0.45,0.94);
   font-feature-settings: 'tnum' 1;
 }
 
 body.clock-dim #time-display {
-  scale: 1.12; 
+  font-size: calc(clamp(88px, 15vw, 180px) * var(--clock-scale) * 1.12);
 }
 
 #time-display.tick { animation: tickAnim 0.28s cubic-bezier(0.22,1,0.36,1); }
@@ -339,7 +349,7 @@ body.timer-running .time-colon { animation: none; opacity: 1; }
   font-size: 11px;
   letter-spacing: 0.14em;
   color: var(--muted);
-  margin-top: 12px;
+  margin-top: 6px;
   height: 18px;
   text-transform: uppercase !important;
 }
@@ -348,7 +358,7 @@ body.timer-running .time-colon { animation: none; opacity: 1; }
 #pomo-dots {
   display: flex; gap: 8px;
   justify-content: center;
-  margin-top: 16px;
+  margin-top: 10px;
   height: 20px;
 }
 .pomo-dot {
@@ -368,7 +378,7 @@ body.timer-running .time-colon { animation: none; opacity: 1; }
 #controls {
   display: flex; gap: 10px;
   justify-content: center;
-  margin-top: 28px;
+  margin-top: 16px;
   min-height: 44px;
   align-items: center;
   transition: opacity 0.4s ease, transform 0.4s ease;
@@ -416,7 +426,7 @@ body.timer-running .time-colon { animation: none; opacity: 1; }
   display: flex; gap: 6px;
   align-items: center;
   justify-content: center;
-  margin-top: 22px;
+  margin-top: 14px;
 }
 .time-input {
   backdrop-filter: blur(14px) saturate(180%);
@@ -568,7 +578,6 @@ body.timer-running #btn-zen:hover { opacity: 1; }
   color: var(--text); 
 }
 
-/* Nút tải về đặc biệt trong Notes */
 .export-btn {
   border-radius: 8px;
   width: auto;
@@ -916,7 +925,7 @@ input[type=range]::-webkit-slider-thumb {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 50;
+  z-index: 100;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -1002,22 +1011,28 @@ input[type=range]::-webkit-slider-thumb {
 body.clock-dim #bg-layer,
 body.clock-dim #bg-new {
   filter: blur(var(--focus-blur));
+  transform: scale(1.1) !important;
 }
 body.clock-dim #bg-layer::after,
 body.clock-dim #bg-new::after,
 body.clock-dim #yt-bg-wrap::after {
   background: rgba(0,0,0,var(--focus-dim));
 }
-/* clock-dim không ẩn UI — chỉ mờ nền */
+
 body.clock-dim #nav,
-body.clock-dim #quote-box,
 body.clock-dim #bottom-left,
-body.clock-dim #bottom-right,
 body.clock-dim #btn-settings,
 body.clock-dim #btn-zen {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.6s ease;
+}
+
+body.clock-dim #quote-box {
   opacity: 1 !important;
   pointer-events: all !important;
 }
+
 #btn-dim.active {
   background: linear-gradient(135deg, rgba(232,213,176,0.2), rgba(232,213,176,0.07));
   border-top-color: rgba(232,213,176,0.45);
@@ -1025,39 +1040,14 @@ body.clock-dim #btn-zen {
   color: var(--accent);
   box-shadow: 0 4px 20px rgba(232,213,176,0.1), inset 0 1px 0 rgba(232,213,176,0.2);
 }
-.dim-toggle-btn {
-  backdrop-filter: blur(14px) saturate(180%);
-  -webkit-backdrop-filter: blur(14px) saturate(180%);
-  background: var(--glass-bg);
-  border-top: 1px solid var(--glass-border-t);
-  border-left: 1px solid var(--glass-border-l);
-  border-right: 1px solid var(--glass-border-r);
-  border-bottom: 1px solid var(--glass-border-b);
-  box-shadow: var(--glass-shadow);
-  color: var(--muted);
-  font-family: 'SF Pro', sans-serif;
-  font-size: 10px;
-  font-weight: 400;
-  letter-spacing: 0.14em;
-  text-transform: uppercase !important;
-  padding: 6px 14px;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex; align-items: center; gap: 7px;
-}
-.dim-toggle-btn.active {
-  background: linear-gradient(135deg, rgba(232,213,176,0.18), rgba(232,213,176,0.06));
-  border-top-color: rgba(232,213,176,0.40);
-  color: var(--accent);
-}
-.dim-toggle-btn svg { width: 13px; height: 13px; transition: all 0.2s; }
 
 /* ── TOUCH / TAP MODE ── */
 body.touch-mode #controls { display: none !important; }
 body.touch-mode #countdown-input { opacity: 0.7; }
 body.touch-mode #btn-dim { display: none !important; }
 body.touch-mode #clock-display { cursor: pointer; }
+body.clock-dim.touch-mode #clock-display { pointer-events: none; } 
+
 @keyframes tapPulse {
   0%   { opacity: 0; transform: scale(0.94); }
   35%  { opacity: 0.22; }
@@ -1088,12 +1078,14 @@ body.touch-mode #clock-display { cursor: pointer; }
 }
 body.touch-mode #touch-hint { display: block; }
 
-/* ── FONT SELECTOR ── */
+/* ── FONT SELECTOR (2x2 Grid) ── */
 .font-selector {
-  display: flex; gap: 6px; margin-top: 4px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 4px;
 }
 .font-opt {
-  flex: 1;
   backdrop-filter: blur(14px) saturate(180%);
   -webkit-backdrop-filter: blur(14px) saturate(180%);
   background: var(--glass-bg);
@@ -1121,7 +1113,190 @@ body.touch-mode #touch-hint { display: block; }
   color: var(--accent);
 }
 
-::-webkit-scrollbar { width: 4px; }
+/* ── TODO NAV BTN ── */
+.todo-nav-btn {
+  display: flex;
+  align-items: center;
+  font-size: 11px !important;
+  letter-spacing: 0.06em !important;
+  text-transform: none !important;
+  max-width: 220px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ── TODO PANEL ── */
+#todo-panel {
+  position: fixed;
+  top: auto;
+  bottom: auto;
+  left: 24px;
+  width: 300px;
+  max-height: 60vh; /* Reduced height */
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+#todo-panel.open { display: flex; }
+
+.todo-input-wrap {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.todo-input {
+  flex: 1;
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  background: rgba(255,255,255,0.05);
+  border-top: 1px solid rgba(255,255,255,0.18);
+  border-left: 1px solid rgba(255,255,255,0.12);
+  border-right: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'SF Pro', sans-serif;
+  font-size: 13px;
+  padding: 8px 12px;
+  outline: none;
+  transition: all 0.2s;
+}
+.todo-input:focus { border-top-color: rgba(232,213,176,0.5); background: rgba(232,213,176,0.05); }
+.todo-input::placeholder { color: var(--muted); }
+.todo-add-btn {
+  width: 36px; height: 36px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  background: linear-gradient(135deg, rgba(232,213,176,0.2), rgba(232,213,176,0.07));
+  border-top: 1px solid rgba(232,213,176,0.45);
+  border-left: 1px solid rgba(232,213,176,0.28);
+  border-right: 1px solid rgba(232,213,176,0.06);
+  border-bottom: 1px solid rgba(232,213,176,0.06);
+  color: var(--accent);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+  font-size: 18px;
+  font-weight: 300;
+}
+.todo-add-btn:hover { background: linear-gradient(135deg, rgba(232,213,176,0.3), rgba(232,213,176,0.12)); }
+
+#todo-list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 240px; /* Reduced height */
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+#todo-list::-webkit-scrollbar { width: 3px; }
+#todo-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+#todo-list:empty::after {
+  content: attr(data-empty);
+  color: rgba(255,255,255,0.18);
+  font-size: 12px;
+  text-align: center;
+  padding: 20px 0;
+  display: block;
+  font-family: 'SF Pro', sans-serif;
+  letter-spacing: 0.04em;
+}
+
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.03);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  border-left: 1px solid rgba(255,255,255,0.06);
+  border-right: 1px solid rgba(255,255,255,0.02);
+  border-bottom: 1px solid rgba(255,255,255,0.02);
+  transition: all 0.2s;
+  cursor: pointer;
+  animation: todoSlideIn 0.2s cubic-bezier(0.34,1.3,0.64,1);
+}
+@keyframes todoSlideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.todo-item:hover { background: rgba(255,255,255,0.06); }
+.todo-item.done { opacity: 0.4; }
+.todo-item.done .todo-text { text-decoration: line-through; }
+
+.todo-check {
+  width: 18px; height: 18px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1.5px solid rgba(232,213,176,0.35);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.todo-check:hover { border-color: rgba(232,213,176,0.7); }
+.todo-item.done .todo-check {
+  background: rgba(168,196,184,0.25);
+  border-color: rgba(168,196,184,0.6);
+}
+.todo-check-icon { display: none; }
+.todo-item.done .todo-check-icon { display: block; }
+
+.todo-text {
+  flex: 1;
+  font-family: 'SF Pro', sans-serif;
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--text);
+  line-height: 1.4;
+  transition: opacity 0.2s;
+}
+.todo-del {
+  width: 22px; height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.2);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  transition: all 0.2s;
+  opacity: 0;
+}
+.todo-item:hover .todo-del { opacity: 1; }
+.todo-del:hover { color: var(--danger); background: rgba(201,123,110,0.12); }
+
+.todo-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.todo-count {
+  font-size: 10px;
+  color: rgba(255,255,255,0.25);
+  letter-spacing: 0.08em;
+  font-family: 'SF Pro', sans-serif;
+}
+.todo-clear-done {
+  font-size: 10px;
+  color: rgba(255,255,255,0.2);
+  cursor: pointer;
+  letter-spacing: 0.06em;
+  font-family: 'SF Pro', sans-serif;
+  transition: color 0.2s;
+  background: none;
+  border: none;
+  padding: 2px 4px;
+}
+.todo-clear-done:hover { color: var(--danger); }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
 
@@ -1197,7 +1372,8 @@ body.touch-mode #touch-hint { display: block; }
 
   #quote-box { display: none; }
 
-  #time-display { font-size: clamp(66px, 18vw, 110px); letter-spacing: -0.03em; }
+  #time-display { font-size: calc(clamp(66px, 18vw, 110px) * var(--clock-scale)); letter-spacing: -0.03em; }
+  body.clock-dim #time-display { font-size: calc(clamp(66px, 18vw, 110px) * var(--clock-scale) * 1.12); }
 
   #bottom-left { bottom: 16px; left: 16px; gap: 7px; }
   #bottom-right { bottom: 16px; right: 16px; }
@@ -1205,7 +1381,7 @@ body.touch-mode #touch-hint { display: block; }
 
   .panel { max-width: calc(100vw - 32px) !important; width: calc(100vw - 32px) !important; left: 16px !important; right: 16px !important; }
   #settings-panel { right: 16px; left: 16px; bottom: 78px; }
-  #bg-panel, #music-panel, #notes-panel { bottom: 78px; }
+  #bg-panel, #music-panel, #notes-panel, #todo-panel { bottom: 78px; }
 
   #floating-player { width: 240px; height: 136px; }
   #fp-time { font-size: 34px; }
@@ -1215,7 +1391,7 @@ body.touch-mode #touch-hint { display: block; }
 }
 @media (max-width: 400px) {
   .nav-btn { display: none; }
-  #nav-row1 .nav-btn:first-of-type { display: flex; } /* show only active-like hint */
+  #nav-row1 .nav-btn:first-of-type { display: flex; } 
 }
 
 /* Hide scrollbar but keep functionality */
@@ -1248,7 +1424,6 @@ body.touch-mode #touch-hint { display: block; }
 
   <!-- Countdown to target date -->
   <div id="nav-countdown">
-    <!-- Hourglass SVG icon -->
     <svg class="ncd-icon" viewBox="0 0 24 24" fill="none" stroke="rgba(168,196,184,0.7)" stroke-width="1.5" stroke-linecap="round">
       <path d="M5 3h14M5 21h14M7 3v4l5 5-5 5v4M17 3v4l-5 5 5 5v4"/>
     </svg>
@@ -1256,6 +1431,14 @@ body.touch-mode #touch-hint { display: block; }
     <span id="ncd-time">--n --:--:--</span>
     <span class="ncd-label" data-i18n="ncdTarget">Là thi THPTQG</span>
   </div>
+
+  <!-- To-do button -->
+  <button class="nav-btn todo-nav-btn" id="btn-todo" onclick="togglePanel('todo-panel', this)">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;flex-shrink:0;vertical-align:middle">
+      <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+    </svg>
+    <span id="todo-btn-text">Bạn còn điều gì để làm không?</span>
+  </button>
 </nav>
 
 <!-- Quotes -->
@@ -1348,6 +1531,23 @@ body.touch-mode #touch-hint { display: block; }
     <div id="fp-mode">focus</div>
   </div>
   <div id="fp-close" onclick="toggleFloatingPlayer()">✕</div>
+</div>
+
+<!-- TODO Panel -->
+<div style="margin-top: 24px;" class="panel" id="todo-panel">
+  <div class="panel-title">
+    <span data-i18n="panelTodo">Việc cần làm</span>
+    <button class="panel-close" onclick="closePanel('todo-panel','btn-todo')">✕</button>
+  </div>
+  <div class="todo-input-wrap">
+    <input type="text" class="todo-input" id="todo-input" placeholder="Bạn muốn làm gì tiếp theo?" data-i18n-ph="todoPh" onkeypress="if(event.key==='Enter') addTodo()">
+    <button class="todo-add-btn" onclick="addTodo()">+</button>
+  </div>
+  <div id="todo-list" data-empty="Chưa có việc gì để làm"></div>
+  <div class="todo-footer">
+    <div class="todo-count" id="todo-count">0 việc còn lại</div>
+    <button class="todo-clear-done" onclick="clearDoneTodos()" data-i18n="clearDone">Xóa việc đã xong</button>
+  </div>
 </div>
 
 <!-- BG Panel -->
@@ -1486,6 +1686,17 @@ body.touch-mode #touch-hint { display: block; }
     </div>
   </div>
 
+  <div class="setting-row">
+    <div>
+      <div class="setting-label" data-i18n="settClockScale">Cỡ đồng hồ</div>
+      <div class="setting-sublabel" data-i18n="settClockScaleSub">phóng to / thu nhỏ</div>
+    </div>
+    <div class="slider-wrap">
+      <input type="range" min="0.5" max="2.0" value="1" id="s-clock-scale" oninput="updateSetting('clock-scale',this.value)" step="0.05">
+      <span class="slider-val" id="v-clock-scale">100%</span>
+    </div>
+  </div>
+
   <div class="setting-divider"></div>
   <div class="setting-section-title" data-i18n="settSectInterface">Giao diện</div>
 
@@ -1526,6 +1737,7 @@ body.touch-mode #touch-hint { display: block; }
     <button class="font-opt active" id="font-default" onclick="setFont('default',this)" data-i18n="fontDefault">Mặc định</button>
     <button class="font-opt opt-mono" id="font-mono" onclick="setFont('mono',this)">Mono</button>
     <button class="font-opt opt-serif" id="font-serif" onclick="setFont('serif',this)">Serif</button>
+    <button class="font-opt opt-condensed" id="font-condensed" onclick="setFont('condensed',this)" title="SF Pro Condensed — chỉ áp dụng cho đồng hồ">Thin</button>
   </div>
 
   <div class="setting-divider"></div>
@@ -1567,10 +1779,10 @@ const TRANS = {
   vi: {
     navClock:'Giờ hiện tại', navCountdown:'Đếm ngược', navPomo:'Pomodoro',
     ncdLeft:'Chỉ còn', ncdTarget:'Là thi THPTQG',
-    panelBg:'Hình nền', panelMusic:'Nhạc nền', panelNotes:'Ghi chú', panelSettings:'Cài đặt',
+    panelBg:'Hình nền', panelMusic:'Nhạc nền', panelNotes:'Ghi chú', panelSettings:'Cài đặt', panelTodo: 'Việc cần làm',
     dropZone:'Kéo thả ảnh vào đây', dropZoneSub:'hoặc nhấn để chọn từ máy',
     bgUrlPh:'Hoặc dán link ảnh vào đây…', applyLink:'Áp dụng link', clearBg:'Xóa hình nền',
-    ytPh:'Dán link YouTube / playlist…', scPh:'Dán link SoundCloud / playlist…',
+    ytPh:'Dán link YouTube / playlist…', scPh:'Dán link SoundCloud / playlist…', todoPh: 'Bạn muốn làm gì tiếp theo?',
     playMusic:'Phát nhạc', tabYt:'YouTube', tabSc:'SoundCloud',
     notesPh:'Gõ gì đó vào đây…\nCứ tự nhiên như đang nghĩ thôi.', exportNotes:'Tải về',
     settSectPomo:'Pomodoro', settPomoWork:'Tập trung', settMinutes:'phút',
@@ -1578,13 +1790,17 @@ const TRANS = {
     settSectDisplay:'Hiển thị', settBlur:'Blur nền khi chạy',
     settDim:'Độ tối nền mặc định', settDimSub:'ảnh nền khi chưa chạy',
     settOffset:'Vị trí đồng hồ', settOffsetSub:'từ giữa',
+    settClockScale:'Cỡ đồng hồ', settClockScaleSub:'phóng to / thu nhỏ',
     settSectInterface:'Giao diện', settLang:'Ngôn ngữ', settLangSub:'giao diện',
     settFont:'Font', settFontSub:'toàn bộ giao diện',
     fontDefault:'Mặc định',
     settSectVideoBg:'Nền video', settYtBg:'YouTube làm nền', settYtBgSub:'video lặp im lặng',
     ytBgPh:'Dán link YouTube vào đây…', applyVideoBg:'Áp dụng video nền', clearVideoBg:'Xóa video nền',
     breakBadge:'Giải lao', notifDismiss:'Tiếp tục thôi',
-    langCurrent:'Tiếng Việt',
+    langCurrent:'Tiếng Việt', clearDone: 'Xóa việc đã xong', taskLeft: 'việc còn lại',
+    // Notification & Errors
+    errorTitle: 'Oops!', errYt: 'Link YouTube không hợp lệ.', errSc: 'Link SoundCloud không hợp lệ.', 
+    errNotes: 'Ghi chú đang trống, không có gì để tải về cả.', errPip: 'Trình duyệt không hỗ trợ cửa sổ nổi (PiP). Hãy dùng Chrome hoặc Edge.',
     // Dynamic
     start:'Bắt đầu', reset:'Đặt lại', pause:'Tạm dừng', resume:'Tiếp tục', stop:'Dừng',
     countdownLbl:'Đếm ngược', countdownSub:'Đặt thời gian bên dưới', countingSub:'Đang đếm ngược',
@@ -1597,14 +1813,30 @@ const TRANS = {
     notifDoneTitle:'Hoàn thành!', wordUnit:' từ',
     settTouchMode:'Chế độ chạm',
     settTouchModeSub:'chạm = bắt/dừng · chạm×2 = đặt lại',
+    morning: 'Chào buổi sáng bạn!', afternoon: 'Chào buổi chiều nha!', evening: 'Chào buổi tối nhé!',
+    todoEmpty: 'Bạn còn điều gì để làm không?', taskPending: 'Còn {n} việc cần làm',
+    msgComplete: [
+      "Mọi thứ đã xong — cái khoảnh khắc này là của bạn.",
+      "Tâm trí đã đi qua, và trở về trong lành hơn.",
+      "Xong. Đơn giản vậy thôi — và đó là điều tuyệt vời nhất.",
+      "Bạn đã chứng minh được điều gì đó cho chính mình.",
+      "Giờ là lúc thở. Bạn xứng đáng với khoảnh khắc này."
+    ],
+    msgPomo: [
+      "Một hiệp nữa đã qua — tâm trí tỉnh như sương mai.",
+      "Sóng sau đè sóng trước — bạn vừa vượt qua một hiệp.",
+      "Mỗi giọt tập trung là một viên đá xây nền.",
+      "Dừng lại một chút. Hít thở. Rồi tiếp tục.",
+      "Bạn vừa hoàn thành một hiệp pomodoro — không phải ai cũng làm được."
+    ]
   },
   en: {
     navClock:'Current Time', navCountdown:'Countdown', navPomo:'Pomodoro',
     ncdLeft:'Only', ncdTarget:'Until Exam',
-    panelBg:'Background', panelMusic:'Music', panelNotes:'Notes', panelSettings:'Settings',
+    panelBg:'Background', panelMusic:'Music', panelNotes:'Notes', panelSettings:'Settings', panelTodo: 'To-do List',
     dropZone:'Drag & drop image here', dropZoneSub:'or click to choose from device',
     bgUrlPh:'Or paste image URL here…', applyLink:'Apply link', clearBg:'Clear background',
-    ytPh:'Paste YouTube link / playlist…', scPh:'Paste SoundCloud link / playlist…',
+    ytPh:'Paste YouTube link / playlist…', scPh:'Paste SoundCloud link / playlist…', todoPh: 'What to do next?',
     playMusic:'Play', tabYt:'YouTube', tabSc:'SoundCloud',
     notesPh:'Type something here…\nJust think out loud.', exportNotes:'Export',
     settSectPomo:'Pomodoro', settPomoWork:'Focus', settMinutes:'minutes',
@@ -1612,13 +1844,17 @@ const TRANS = {
     settSectDisplay:'Display', settBlur:'Blur while running',
     settDim:'Background dim', settDimSub:'before timer starts',
     settOffset:'Clock position', settOffsetSub:'from center',
+    settClockScale:'Clock Scale', settClockScaleSub:'zoom in / out',
     settSectInterface:'Interface', settLang:'Language', settLangSub:'interface',
     settFont:'Set font', settFontSub:'entire interface',
     fontDefault:'Default',
     settSectVideoBg:'Video Background', settYtBg:'YouTube Background', settYtBgSub:'silent loop',
     ytBgPh:'Paste YouTube link here…', applyVideoBg:'Apply video', clearVideoBg:'Clear video',
     breakBadge:'Break', notifDismiss:'Continue',
-    langCurrent:'English',
+    langCurrent:'English', clearDone: 'Clear done', taskLeft: 'tasks left',
+    // Notification & Errors
+    errorTitle: 'Oops!', errYt: 'Invalid YouTube link.', errSc: 'Invalid SoundCloud link.', 
+    errNotes: 'Notes are empty, nothing to export.', errPip: 'Browser does not support PiP. Use Chrome/Edge.',
     // Dynamic
     start:'Start', reset:'Reset', pause:'Pause', resume:'Resume', stop:'Stop',
     countdownLbl:'Countdown', countdownSub:'Set time below', countingSub:'Counting down',
@@ -1631,10 +1867,27 @@ const TRANS = {
     notifDoneTitle:'Done!', wordUnit:' words',
     settTouchMode:'Touch Mode',
     settTouchModeSub:'tap = start/pause · 2 taps = reset',
+    morning: 'Good morning!', afternoon: 'Good afternoon!', evening: 'Good evening!',
+    todoEmpty: 'Anything else to do?', taskPending: '{n} tasks left',
+    msgComplete: [
+      "Everything is done — this moment is yours.",
+      "The mind has traveled, returning clearer.",
+      "Done. Simply that — and that's the best part.",
+      "You just proved something to yourself.",
+      "Now, breathe. You deserve this moment."
+    ],
+    msgPomo: [
+      "Another round passed — mind as clear as morning dew.",
+      "Wave upon wave — you just conquered a round.",
+      "Every drop of focus builds the foundation.",
+      "Pause for a moment. Breathe. Then continue.",
+      "You just finished a pomodoro round — not everyone can."
+    ]
   }
 };
 function t(key, p) {
   let s = (TRANS[lang] || TRANS.vi)[key] || TRANS.vi[key] || key;
+  if (Array.isArray(s)) return s; // Trả về array nếu là msg
   if (p) Object.keys(p).forEach(k => s = s.replace('{'+k+'}', p[k]));
   return s;
 }
@@ -1645,19 +1898,16 @@ function applyLang() {
   document.querySelectorAll('[data-i18n-ph]').forEach(el => {
     el.placeholder = t(el.dataset.i18nPh);
   });
+  renderTodos();
 }
 function setLang(isEn) {
   lang = isEn ? 'en' : 'vi';
   document.getElementById('lang-label').textContent = t('langCurrent');
   applyLang();
-  // Cập nhật lang attr của <html>
   document.documentElement.lang = isEn ? 'en' : 'vi';
-  // Re-render slider display values với đơn vị mới
-  Object.keys(settings).forEach(k => {
-    const el = document.getElementById('v-' + k);
-    if (el) updateSetting(k, settings[k]);
-  });
-  // Update touch hint nếu đang bật
+  
+  // Update sliders text translation immediately
+  syncSettings();
   updateTouchHint();
   render();
   savePrefs();
@@ -1683,20 +1933,6 @@ const QUOTES = [
   { text: "Absorb what is useful, discard what is useless.", author: "Bruce Lee" },
 ];
 
-const POMO_MSGS = [
-  "Một hiệp nữa đã qua — tâm trí tỉnh như sương mai.",
-  "Sóng sau đè sóng trước — bạn vừa vượt qua một hiệp.",
-  "Mỗi giọt tập trung là một viên đá xây nền.",
-  "Dừng lại một chút. Hít thở. Rồi tiếp tục.",
-  "Bạn vừa hoàn thành một hiệp pomodoro — không phải ai cũng làm được.",
-];
-const COMPLETE_MSGS = [
-  "Mọi thứ đã xong — cái khoảnh khắc này là của bạn.",
-  "Tâm trí đã đi qua, và trở về trong lành hơn.",
-  "Xong. Đơn giản vậy thôi — và đó là điều tuyệt vời nhất.",
-  "Bạn đã chứng minh được điều gì đó cho chính mình.",
-  "Giờ là lúc thở. Bạn xứng đáng với khoảnh khắc này.",
-];
 const POMO_ICONS = ["✦", "◈", "⬡", "✧", "◇"];
 
 /* ── STATE ── */
@@ -1718,13 +1954,12 @@ let lang = 'vi';
 let clockDimOn = false;
 let touchMode = false;
 let lastTapTime = 0;
-let tapTimeout = null; // Quản lý thời gian chờ double tap
+let tapTimeout = null;
 
 const settings = {
   'pomo-work': 25, 'pomo-break': 5, 'pomo-long': 15,
-  blur: 8, dim: 0.55, offset: 0,
+  blur: 8, dim: 0.55, offset: 0, 'clock-scale': 1
 };
-// Khôi phục settings từ localStorage
 try {
   const saved = JSON.parse(localStorage.getItem('focus-settings') || '{}');
   Object.assign(settings, saved);
@@ -1734,23 +1969,16 @@ const TARGET_DATE = new Date('2026-06-11T07:00:00');
 
 function pad(n) { return String(n).padStart(2,'0'); }
 
-/* ── FONT SETTINGS (Hàm mới được bổ sung) ── */
+/* ── FONT SETTINGS ── */
 function setFont(type, btn) {
-  // Reset active classes
   document.querySelectorAll('.font-opt').forEach(b => b.classList.remove('active'));
-  if (btn) {
-    btn.classList.add('active');
-  } else {
+  if (btn) btn.classList.add('active');
+  else {
     const el = document.getElementById('font-' + type);
     if (el) el.classList.add('active');
   }
-
-  // Áp dụng class vào body
-  document.body.classList.remove('font-mono', 'font-serif');
-  if (type !== 'default') {
-    document.body.classList.add('font-' + type);
-  }
-  
+  document.body.classList.remove('font-mono', 'font-serif', 'font-condensed');
+  if (type !== 'default') document.body.classList.add('font-' + type);
   savePrefs();
 }
 
@@ -1772,6 +2000,80 @@ function updateNavCountdown() {
 updateNavCountdown();
 setInterval(updateNavCountdown, 1000);
 
+/* ── TODO LOGIC ── */
+let todos = JSON.parse(localStorage.getItem('focus-todos') || '[]');
+
+function saveTodos() {
+  localStorage.setItem('focus-todos', JSON.stringify(todos));
+  renderTodos();
+}
+
+function addTodo() {
+  const input = document.getElementById('todo-input');
+  const text = input.value.trim();
+  if (text) {
+    todos.unshift({ id: Date.now(), text, done: false });
+    input.value = '';
+    saveTodos();
+  }
+}
+
+function toggleTodo(id) {
+  const todo = todos.find(t => t.id === id);
+  if (todo) {
+    todo.done = !todo.done;
+    saveTodos();
+  }
+}
+
+function deleteTodo(id, e) {
+  e.stopPropagation();
+  todos = todos.filter(t => t.id !== id);
+  saveTodos();
+}
+
+function clearDoneTodos() {
+  todos = todos.filter(t => !t.done);
+  saveTodos();
+}
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 12) return t('morning');
+  if (h >= 12 && h < 18) return t('afternoon');
+  return t('evening');
+}
+
+function renderTodos() {
+  const list = document.getElementById('todo-list');
+  list.innerHTML = '';
+  let pending = 0;
+  todos.forEach(t => {
+    if (!t.done) pending++;
+    const div = document.createElement('div');
+    div.className = `todo-item ${t.done ? 'done' : ''}`;
+    div.onclick = () => toggleTodo(t.id);
+    div.innerHTML = `
+      <button class="todo-check">
+        <svg class="todo-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M20 6L9 17l-5-5"/></svg>
+      </button>
+      <span class="todo-text">${t.text}</span>
+      <button class="todo-del" onclick="deleteTodo(${t.id}, event)">✕</button>
+    `;
+    list.appendChild(div);
+  });
+
+  document.getElementById('todo-count').textContent = pending + ' ' + t('taskLeft');
+  list.setAttribute('data-empty', t('todoEmpty'));
+
+  const btnText = document.getElementById('todo-btn-text');
+  if (pending > 0) {
+    btnText.textContent = t('taskPending', {n: pending});
+  } else {
+    btnText.textContent = getGreeting();
+  }
+}
+
 /* ── QUOTES ── */
 function showQuote() {
   const q = QUOTES[quoteIdx % QUOTES.length];
@@ -1792,7 +2094,10 @@ function switchMode(m) {
   stop();
   mode = m;
   document.querySelectorAll('.nav-btn').forEach((b,i) => {
-    b.classList.toggle('active', ['clock','countdown','pomodoro'][i] === m);
+    // Không tháo class của btn-todo
+    if(!b.classList.contains('todo-nav-btn')) {
+      b.classList.toggle('active', ['clock','countdown','pomodoro'][i] === m);
+    }
   });
   closeAllPanels();
   render();
@@ -1822,7 +2127,6 @@ function render() {
   } else {
     document.getElementById('clock-display').classList.remove('clock-mode');
     document.getElementById('btn-dim').style.display = 'none';
-    // Reset dim khi rời clock mode
     if (clockDimOn) { clockDimOn = false; document.body.classList.remove('clock-dim'); document.getElementById('btn-dim').classList.remove('active'); }
     clearInterval(clockInterval);
     if (mode === 'countdown') {
@@ -1855,15 +2159,11 @@ function setTimeDisplay(str) {
     td.classList.add('tick');
     lastTimeStr = str;
   }
-  // Render with colons wrapped for blink
   td.innerHTML = str.replace(/:/g, '<span class="time-colon">:</span>');
-  // Sync floating player
   document.getElementById('fp-time').innerHTML = str.replace(/:/g, '<span style="opacity:0.7">:</span>');
   if (pipWindow) {
     const pipTime = pipWindow.document.getElementById('fp-time');
     if (pipTime) pipTime.innerHTML = str.replace(/:/g, '<span style="opacity:0.7">:</span>');
-    
-    // Đồng bộ luôn cái mode (giờ hiện tại, đếm ngược...)
     const pipMode = pipWindow.document.getElementById('fp-mode');
     if (pipMode) pipMode.textContent = document.getElementById('fp-mode').textContent;
   }
@@ -1878,6 +2178,11 @@ function updateClock() {
   const options = { weekday: 'long', month: 'long', day: 'numeric' };
   document.getElementById('mode-label').textContent = now.toLocaleDateString(locale, options);
   document.getElementById('fp-mode').textContent = lang === 'en' ? 'current time' : 'giờ hiện tại';
+  
+  // Cập nhật câu chào của todo mỗi phút
+  if (now.getSeconds() === 0 && todos.filter(t => !t.done).length === 0) {
+    document.getElementById('todo-btn-text').textContent = getGreeting();
+  }
 }
 
 /* ── POMODORO DOTS ── */
@@ -1924,7 +2229,8 @@ function tickCountdown() {
     setBgFocus(false);
     document.body.classList.remove('timer-running');
     document.getElementById('time-display').classList.remove('running','warning');
-    showNotif('◇', t('notifDoneTitle'), COMPLETE_MSGS[Math.floor(Math.random()*COMPLETE_MSGS.length)]);
+    const msgArr = t('msgComplete');
+    showNotif('◇', t('notifDoneTitle'), msgArr[Math.floor(Math.random()*msgArr.length)]);
     return;
   }
   if (currentSecs <= 10) document.getElementById('time-display').classList.add('warning');
@@ -1995,10 +2301,11 @@ function tickPomo() {
       renderPomoDots();
       setBgFocus(false);
       const isLong = pomoCount % 4 === 0;
+      const msgArr = t('msgPomo');
       showNotif(
         POMO_ICONS[pomoCount % POMO_ICONS.length],
         t('notifPomoTitle', {n: pomoCount}),
-        POMO_MSGS[Math.floor(Math.random()*POMO_MSGS.length)] + (isLong ? t('notifLongBreak') : '')
+        msgArr[Math.floor(Math.random()*msgArr.length)] + (isLong ? t('notifLongBreak') : '')
       );
       document.getElementById('notif-dismiss').onclick = () => { dismissNotif(); startPomoBreak(isLong); };
     } else {
@@ -2032,7 +2339,7 @@ function stop() {
   clearInterval(timerInterval);
   clearInterval(clockInterval);
   running = false;
-  currentSecs = 0; // Reset cả thời gian dở dang
+  currentSecs = 0; 
   pomoCount = 0;
   setBgFocus(false);
   document.body.classList.remove('timer-running');
@@ -2058,11 +2365,16 @@ function updateSetting(key, val) {
     'pomo-work': v => v + ' ' + min, 'pomo-break': v => v + ' ' + min,
     'pomo-long': v => v + ' ' + min, blur: v => v + 'px',
     dim: v => Math.round(v * 100) + '%', offset: v => v + '%',
+    'clock-scale': v => Math.round(v * 100) + '%'
   };
-  document.getElementById('v-' + key).textContent = displays[key](val);
+  const dispEl = document.getElementById('v-' + key);
+  if(dispEl) dispEl.textContent = displays[key](val);
+  
   if (key === 'blur') document.documentElement.style.setProperty('--focus-blur', val + 'px');
   if (key === 'dim') document.documentElement.style.setProperty('--focus-dim', val);
-  if (key === 'offset') document.getElementById('clock-display').style.transform = 'translateY(calc(-50% + ' + val + 'vh))';
+  if (key === 'offset') document.getElementById('clock-display').style.transform = 'translateY(calc(' + val + 'vh))';
+  if (key === 'clock-scale') document.documentElement.style.setProperty('--clock-scale', val);
+  
   try { localStorage.setItem('focus-settings', JSON.stringify(settings)); } catch(e) {}
 }
 
@@ -2070,19 +2382,16 @@ function updateSetting(key, val) {
 function applyBg(url) {
   const bgNew = document.getElementById('bg-new');
   const bg = document.getElementById('bg-layer');
-  // Cross-fade: load vào lớp mới, sau khi xuất hiện thì gán vào bg-layer
   bgNew.style.backgroundImage = 'url("' + url + '")';
   bgNew.classList.remove('reveal');
-  void bgNew.offsetWidth; // reflow
+  void bgNew.offsetWidth; 
   bgNew.classList.add('reveal');
   setTimeout(() => {
     bg.style.backgroundImage = 'url("' + url + '")';
     bgNew.classList.remove('reveal');
     bgNew.style.backgroundImage = '';
   }, 950);
-  // Sync floating player bg
   document.getElementById('fp-bg').style.backgroundImage = 'url("' + url + '")';
-  // Sync notification backdrop
   document.documentElement.style.setProperty('--notif-bg-img', 'url("' + url + '")');
   savePrefs();
 }
@@ -2117,7 +2426,7 @@ function handleFileInput(e) {
   reader.readAsDataURL(file);
 }
 
-/* ── YOUTUBE BACKGROUND (video nền) ── */
+/* ── YOUTUBE BACKGROUND ── */
 function toggleYtBg(enabled) {
   document.getElementById('yt-bg-section').style.display = enabled ? 'block' : 'none';
   if (!enabled) clearYtBg();
@@ -2128,11 +2437,10 @@ function applyYtBg() {
   let videoId = '';
   const m = url.match(/(?:youtu\.be\/|v=)([^#&?]{11})/);
   if (m) videoId = m[1];
-  if (!videoId) { alert('Link YouTube không hợp lệ.'); return; }
-  const src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&disablekb=1&fs=0&modestbranding=1&enablejsapi=1`;
+  if (!videoId) { showNotif('!', t('errorTitle'), t('errYt')); return; }
+  const src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&disablekb=1&fs=0&modestbranding=1&rel=0&iv_load_policy=3`;
   document.getElementById('yt-bg-iframe').src = src;
   document.getElementById('yt-bg-wrap').classList.add('active');
-  // Dim main bg when yt bg is active
   document.getElementById('bg-layer').style.opacity = '0';
   savePrefs();
 }
@@ -2153,83 +2461,29 @@ function switchMusicTab(tab, btn) {
 }
 
 /* ── YOUTUBE MUSIC ── */
-let ytPlayer = null;
-let ytKeepAliveInterval = null;
-
-// Load YouTube IFrame API
-(function loadYTAPI() {
-  if (window.YT) return;
-  const tag = document.createElement('script');
-  tag.src = 'https://www.youtube.com/iframe_api';
-  document.head.appendChild(tag);
-})();
-
-function onYouTubeIframeAPIReady() {
-  // API đã sẵn sàng, không cần làm gì trước
-}
-
 function loadYT() {
   const url = document.getElementById('yt-url-input').value.trim();
   if (!url) return;
   const iframe = document.getElementById('yt-iframe');
   const wrap = document.getElementById('yt-frame-wrap');
   
-  // Chuẩn hóa URL YouTube Music → YouTube
   const normalized = url.replace('music.youtube.com', 'www.youtube.com');
-  
   const listMatch = normalized.match(/[?&]list=([^#&?\s]+)/);
   const videoMatch = normalized.match(/(?:youtu\.be\/|[?&]v=)([^#&?\s]{11})/);
   
   let src = '';
   if (videoMatch && listMatch) {
-    src = `https://www.youtube.com/embed/${videoMatch[1]}?list=${listMatch[1]}&autoplay=1&enablejsapi=1`;
+    src = `https://www.youtube.com/embed/${videoMatch[1]}?list=${listMatch[1]}&autoplay=1&rel=0&modestbranding=1`;
   } else if (listMatch) {
-    src = `https://www.youtube.com/embed/videoseries?list=${listMatch[1]}&autoplay=1&enablejsapi=1`;
+    src = `https://www.youtube.com/embed/videoseries?list=${listMatch[1]}&autoplay=1&rel=0&modestbranding=1`;
   } else if (videoMatch) {
-    src = `https://www.youtube.com/embed/${videoMatch[1]}?autoplay=1&loop=1&playlist=${videoMatch[1]}&enablejsapi=1&rel=0`;
+    src = `https://www.youtube.com/embed/${videoMatch[1]}?autoplay=1&loop=1&playlist=${videoMatch[1]}&rel=0&modestbranding=1`;
   } else {
-    alert('Link này không nhận diện được. Thử link khác xem sao.');
+    showNotif('!', t('errorTitle'), t('errYt'));
     return;
   }
-  iframe.src = src + `&origin=${encodeURIComponent(location.origin)}`;
+  iframe.src = src;
   wrap.classList.add('visible');
-  startYTKeepalive(iframe);
-}
-
-function startYTKeepalive(iframe) {
-  if (ytKeepAliveInterval) clearInterval(ytKeepAliveInterval);
-  // Ping iframe mỗi 20 phút để tránh bị tắt sau 30 phút
-  ytKeepAliveInterval = setInterval(() => {
-    try {
-      iframe.contentWindow.postMessage(JSON.stringify({
-        event: 'command', func: 'playVideo', args: []
-      }), '*');
-    } catch(e) {
-      // Reload iframe nếu không postMessage được
-      const src = iframe.src;
-      iframe.src = '';
-      setTimeout(() => { iframe.src = src; }, 100);
-    }
-  }, 20 * 60 * 1000); // 20 phút
-
-  // Lắng nghe sự kiện từ YT để tự resume nếu bị pause
-  window.addEventListener('message', function ytMsgHandler(e) {
-    if (!e.data) return;
-    try {
-      const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
-      // YT state: -1=unstarted, 0=ended, 1=playing, 2=paused, 3=buffering, 5=cued
-      if (data.event === 'onStateChange' && (data.info === 0 || data.info === 2)) {
-        // Video kết thúc hoặc bị pause — play lại sau 1s
-        setTimeout(() => {
-          try {
-            iframe.contentWindow.postMessage(JSON.stringify({
-              event: 'command', func: 'playVideo', args: []
-            }), '*');
-          } catch(err) {}
-        }, 1000);
-      }
-    } catch(err) {}
-  });
 }
 
 /* ── SOUNDCLOUD MUSIC ── */
@@ -2237,7 +2491,7 @@ function loadSC() {
   const url = document.getElementById('sc-url-input').value.trim();
   if (!url) return;
   if (!url.includes('soundcloud.com')) {
-    alert('Link SoundCloud không hợp lệ rồi bạn ơi.');
+    showNotif('!', t('errorTitle'), t('errSc'));
     return;
   }
   const iframe = document.getElementById('yt-iframe');
@@ -2256,7 +2510,7 @@ function saveNotes() {
 }
 function exportNotes() {
   const text = document.getElementById('notes-area').value;
-  if (!text.trim()) { alert("Ghi chú đang trống — định xuất hư vô ra file à?"); return; }
+  if (!text.trim()) { showNotif('!', t('errorTitle'), t('errNotes')); return; }
   const blob = new Blob([text], { type: 'text/plain' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -2292,12 +2546,12 @@ function closePanel(id, btnId) {
 }
 function closeAllPanels() {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
-  document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tool-btn, .todo-nav-btn').forEach(b => b.classList.remove('active'));
 }
 document.addEventListener('click', e => {
   if (document.body.classList.contains('timer-running')) return;
   const panels = document.querySelectorAll('.panel');
-  const btns = document.querySelectorAll('.tool-btn, #btn-settings');
+  const btns = document.querySelectorAll('.tool-btn, #btn-settings, .todo-nav-btn');
   let inside = false;
   panels.forEach(p => { if (p.contains(e.target)) inside = true; });
   btns.forEach(b => { if (b.contains(e.target)) inside = true; });
@@ -2317,7 +2571,7 @@ function dismissNotif() {
   document.getElementById('notification').classList.remove('show');
 }
 
-/* ── FULLSCREEN (ZEN = fullscreen only) ── */
+/* ── FULLSCREEN ── */
 function toggleZen() {
   const isFs = !!document.fullscreenElement;
   if (!isFs) {
@@ -2344,29 +2598,21 @@ let pipWindow = null;
 
 async function toggleFloatingPlayer() {
   if (!('documentPictureInPicture' in window)) {
-    alert("Trình duyệt không hỗ trợ Document PiP rồi. Nâng cấp Chrome/Edge đi nhé.");
+    showNotif('!', t('errorTitle'), t('errPip'));
     return;
   }
-
-  // Nếu đang mở thì đóng
   if (pipWindow) {
     pipWindow.close();
     return;
   }
-
-  // Yêu cầu mở cửa sổ PiP
   pipWindow = await window.documentPictureInPicture.requestWindow({
     width: 320, height: 160
   });
-
   pipWindow.addEventListener("pagehide", () => {
     pipWindow = null;
     document.getElementById('btn-pip').classList.remove('active');
   });
-
   document.getElementById('btn-pip').classList.add('active');
-
-  // Nạp Font và CSS vào cửa sổ mới
   pipWindow.document.head.insertAdjacentHTML('beforeend', `
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
@@ -2392,60 +2638,13 @@ async function toggleFloatingPlayer() {
       }
     </style>
   `);
-
-  // Nhét layout vào
   pipWindow.document.body.innerHTML = `
     <div id="fp-time">${document.getElementById('time-display').innerHTML}</div>
     <div id="fp-mode">${document.getElementById('fp-mode').textContent}</div>
   `;
 }
-// Draggable floating player
-const fp = document.getElementById('floating-player');
-fp.addEventListener('mousedown', startDrag);
-fp.addEventListener('touchstart', startDragTouch, { passive: true });
 
-function startDrag(e) {
-  if (e.target.id === 'fp-close') return;
-  isDragging = true;
-  const rect = fp.getBoundingClientRect();
-  dragOffX = e.clientX - rect.left;
-  dragOffY = e.clientY - rect.top;
-  fp.style.transition = 'none';
-  e.preventDefault();
-}
-function startDragTouch(e) {
-  if (e.target.id === 'fp-close') return;
-  isDragging = true;
-  const rect = fp.getBoundingClientRect();
-  dragOffX = e.touches[0].clientX - rect.left;
-  dragOffY = e.touches[0].clientY - rect.top;
-  fp.style.transition = 'none';
-}
-document.addEventListener('mousemove', doDrag);
-document.addEventListener('touchmove', doDragTouch, { passive: false });
-document.addEventListener('mouseup', stopDrag);
-document.addEventListener('touchend', stopDrag);
-
-function doDrag(e) {
-  if (!isDragging) return;
-  moveFP(e.clientX, e.clientY);
-}
-function doDragTouch(e) {
-  if (!isDragging) return;
-  e.preventDefault();
-  moveFP(e.touches[0].clientX, e.touches[0].clientY);
-}
-function moveFP(cx, cy) {
-  const x = Math.max(0, Math.min(window.innerWidth - fp.offsetWidth, cx - dragOffX));
-  const y = Math.max(0, Math.min(window.innerHeight - fp.offsetHeight, cy - dragOffY));
-  fp.style.left = x + 'px';
-  fp.style.top = y + 'px';
-  fp.style.bottom = 'auto';
-  fp.style.right = 'auto';
-}
-function stopDrag() { isDragging = false; fp.style.transition = ''; }
-
-/* ── TOUCH / TAP MODE ── (ĐÃ SỬA LỖI LOGIC TẠI ĐÂY) */
+/* ── TOUCH / TAP MODE ── */
 function setTouchMode(on) {
   touchMode = on;
   document.body.classList.toggle('touch-mode', on);
@@ -2482,7 +2681,6 @@ function flashTapRing() {
 function handleClockTap(e) {
   if (!touchMode) return;
   if (isDragging) return;
-  // Bỏ qua nếu chạm vào UI
   if (e.target.closest('.time-input')) return;
   if (e.target.closest('input, button, .ctrl-btn, .panel, #nav, #bottom-left, #bottom-right, #floating-player, #notification, #break-badge, .tool-btn, .nav-btn, .music-tab, .toggle, select, textarea')) return;
   
@@ -2490,36 +2688,22 @@ function handleClockTap(e) {
   e.stopPropagation();
 
   flashTapRing();
-
   const now = Date.now();
 
-  // Kiểm tra thời gian giữa 2 lần tap (DOUBLE TAP)
   if (now - lastTapTime < 300) {
-    // ĐÂY LÀ DOUBLE TAP (RESET)
-    clearTimeout(tapTimeout); // Huỷ bỏ lệnh single tap trước đó
-    lastTapTime = 0; // Đặt lại về 0 để nhận nhịp đập mới
-    if (mode !== 'clock') {
-        stop(); // Reset
-    }
+    clearTimeout(tapTimeout); 
+    lastTapTime = 0; 
+    if (mode !== 'clock') stop(); 
   } else {
-    // ĐÂY (CÓ THỂ) LÀ SINGLE TAP
     lastTapTime = now;
-    
-    // Đợi 300ms xem có tap thêm cái nữa không thì mới ra lệnh
     tapTimeout = setTimeout(() => {
       if (mode === 'clock') {
         toggleClockDim();
       } else {
-        if (running) {
-          // Đang chạy => Tạm dừng
-          pauseResume();
-        } else {
-          // Đang không chạy
-          if (currentSecs > 0) {
-            // Đã có thời gian nhưng đang pause => Tiếp tục đếm
-            pauseResume();
-          } else {
-            // Chưa có thời gian (Chưa bắt đầu hoặc vừa bị Reset) => Bắt đầu đếm mới
+        if (running) pauseResume();
+        else {
+          if (currentSecs > 0) pauseResume();
+          else {
             if (mode === 'countdown') startCountdown();
             else if (mode === 'pomodoro') startPomo();
           }
@@ -2530,7 +2714,6 @@ function handleClockTap(e) {
   }
 }
 
-// Bind tap trên toàn màn hình — bỏ qua nút, input, panel
 document.addEventListener('pointerdown', handleClockTap);
 document.addEventListener('pointerdown', e => {
   const btn = e.target.closest('.ctrl-btn, .nav-btn, .tool-btn, .small-btn, #notif-dismiss, .panel-close, .music-tab');
@@ -2546,22 +2729,7 @@ document.addEventListener('pointerdown', e => {
   setTimeout(() => ripple.remove(), 520);
 });
 
-/* ── INIT ── */
-// Sync slider UI với settings đã load từ localStorage
-(function syncSettings() {
-  const sliderMap = {
-    'pomo-work': 's-pomo-work', 'pomo-break': 's-pomo-break',
-    'pomo-long': 's-pomo-long', blur: 's-blur', dim: 's-dim', offset: 's-offset'
-  };
-  Object.keys(sliderMap).forEach(k => {
-    const el = document.getElementById(sliderMap[k]);
-    if (el) { el.value = settings[k]; updateSetting(k, settings[k]); }
-  });
-})();
-render();
-loadPrefs();
-
-/* ── PREFERENCES PERSISTENCE ── */
+/* ── PREFERENCES PERSISTENCE & INIT ── */
 const PREFS_KEY = 'focus-prefs';
 
 function savePrefs() {
@@ -2572,7 +2740,6 @@ function savePrefs() {
       touchMode,
       bgUrl: (() => {
         const bg = document.getElementById('bg-layer').style.backgroundImage;
-        // Không lưu base64 (quá nặng) — chỉ lưu http/https URL
         if (!bg || bg === 'none') return '';
         const m = bg.match(/url\("?(https?:[^")]+)"?\)/);
         return m ? m[1] : '';
@@ -2587,15 +2754,14 @@ function savePrefs() {
 function loadPrefs() {
   try {
     const prefs = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
-
-    // Lang
-    if (prefs.lang === 'en') {
-      lang = 'en';
-      const tog = document.getElementById('lang-toggle');
-      if (tog) tog.checked = true;
-      document.documentElement.lang = 'en';
-      applyLang();
-    }
+    
+    // Ngôn ngữ
+    lang = prefs.lang === 'en' ? 'en' : 'vi';
+    const langTog = document.getElementById('lang-toggle');
+    if (langTog) langTog.checked = (lang === 'en');
+    document.documentElement.lang = lang;
+    document.getElementById('lang-label').textContent = t('langCurrent');
+    applyLang();
 
     // Font
     if (prefs.font && prefs.font !== 'default') {
@@ -2603,23 +2769,19 @@ function loadPrefs() {
       if (btn) setFont(prefs.font, btn);
     }
 
-    // Touch mode
-    if (prefs.touchMode) {
-      touchMode = true;
-      document.body.classList.add('touch-mode');
-      const tog = document.getElementById('touch-mode-toggle');
-      if (tog) tog.checked = true;
-      updateTouchHint();
-    }
+    // Touch Mode
+    touchMode = !!prefs.touchMode;
+    const touchTog = document.getElementById('touch-mode-toggle');
+    if (touchTog) touchTog.checked = touchMode;
+    document.body.classList.toggle('touch-mode', touchMode);
+    updateTouchHint();
 
-    // Background URL
+    // Background & Video Bg
     if (prefs.bgUrl) {
       applyBg(prefs.bgUrl);
       const inp = document.getElementById('bg-url-input');
       if (inp) inp.value = prefs.bgUrl;
     }
-
-    // YouTube background
     if (prefs.ytBgActive && prefs.ytBgUrl) {
       const tog = document.getElementById('yt-bg-toggle');
       if (tog) { tog.checked = true; toggleYtBg(true); }
@@ -2630,6 +2792,23 @@ function loadPrefs() {
   } catch(e) {}
 }
 
+function syncSettings() {
+  const sliderMap = {
+    'pomo-work': 's-pomo-work', 'pomo-break': 's-pomo-break',
+    'pomo-long': 's-pomo-long', blur: 's-blur', dim: 's-dim', offset: 's-offset',
+    'clock-scale': 's-clock-scale'
+  };
+  Object.keys(sliderMap).forEach(k => {
+    const el = document.getElementById(sliderMap[k]);
+    if (el) { el.value = settings[k]; updateSetting(k, settings[k]); }
+  });
+}
+
+// Chạy loadPrefs ĐẦU TIÊN để xác định ngôn ngữ, sau đó mới syncSettings để label hiển thị đúng tiếng Anh/Việt
+loadPrefs();
+syncSettings();
+renderTodos();
+render();
 
 /* ── CLOCK DIM MODE ── */
 function toggleClockDim() {
