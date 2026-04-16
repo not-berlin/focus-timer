@@ -9,7 +9,9 @@
 <meta name="apple-mobile-web-app-title" content="Focus">
 <meta name="description" content="Ứng dụng tập trung — đồng hồ, đếm ngược, Pomodoro">
 <title>Focus</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prata&display=swap" rel="stylesheet">
 <link rel="icon" href="https://media1.tenor.com/m/8vFVhn_hy4MAAAAd/cat-vibes.gif" type="image/gif">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -47,6 +49,7 @@
   --glass-border-r: rgba(255,255,255,0.06);
   --glass-border-b: rgba(255,255,255,0.06);
   --glass-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.10);
+  --intro-ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 html, body {
@@ -66,7 +69,7 @@ body.font-mono, body.font-mono * {
   font-variation-settings: normal !important;
 }
 body.font-serif, body.font-serif * {
-  font-family: 'DM Serif Display', serif !important;
+  font-family: 'Prata', serif !important;
   font-variation-settings: normal !important;
 }
 /* Font SF Pro Condensed — chỉ áp dụng cho mặt đồng hồ */
@@ -75,6 +78,12 @@ body.font-condensed #fp-time {
   font-family: 'SF Pro', 'DM Mono', monospace !important;
   font-variation-settings: 'wdth' 47, 'opsz' 28, 'wght' 120.70000762951095 !important;
   letter-spacing: -0.01em !important;
+}
+
+#intro-screen,
+#intro-screen * {
+  font-family: 'SF Pro', 'DM Mono', sans-serif !important;
+  font-variation-settings: normal !important;
 }
 
 /* ── BACKGROUND ── */
@@ -125,6 +134,176 @@ body.timer-running #bg-layer { transform: scale(1.06); }
 }
 #bg-new.focused { 
   filter: blur(var(--focus-blur)); 
+}
+
+body.intro-active #bg-layer,
+body.intro-active #bg-new {
+  transform: scale(1.08);
+}
+
+body.intro-active #nav,
+body.intro-active #quote-box,
+body.intro-active #app,
+body.intro-active #bottom-left,
+body.intro-active #bottom-right,
+body.intro-active #break-badge {
+  opacity: 0;
+  pointer-events: none;
+  filter: blur(12px);
+}
+
+body.intro-active #nav,
+body.intro-active #quote-box,
+body.intro-active #bottom-left,
+body.intro-active #bottom-right,
+body.intro-active #break-badge {
+  transform: translateY(26px) scale(0.98);
+}
+
+body.intro-active #app {
+  transform: translateY(40px) scale(0.985);
+}
+
+#nav,
+#quote-box,
+#app,
+#bottom-left,
+#bottom-right,
+#break-badge {
+  transition:
+    opacity 0.9s var(--intro-ease),
+    transform 0.9s var(--intro-ease),
+    filter 0.9s var(--intro-ease);
+}
+
+/* ── INTRO REVEAL ── */
+#intro-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255,255,255,0.06), transparent 34%),
+    linear-gradient(180deg, rgba(15,15,15,0.98) 0%, rgba(3,3,3,1) 100%);
+  color: rgba(255,255,255,0.96);
+  pointer-events: none;
+}
+
+#intro-screen::before,
+#intro-screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+#intro-screen::before {
+  background:
+    linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.035) 50%, transparent 100%),
+    repeating-linear-gradient(180deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 4px);
+  opacity: 0.14;
+  mix-blend-mode: screen;
+}
+
+#intro-screen::after {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1), transparent 46%),
+    linear-gradient(180deg, rgba(255,255,255,0.03), transparent 22%, transparent 78%, rgba(255,255,255,0.03));
+  opacity: 0.22;
+}
+
+.intro-counter-wrap {
+  position: absolute;
+  z-index: 2;
+}
+
+.intro-counter-wrap {
+  left: 24px;
+  right: 24px;
+  bottom: 38px;
+}
+
+#intro-counter {
+  font-size: clamp(92px, 20vw, 240px);
+  line-height: 0.72;
+  letter-spacing: -0.08em;
+  color: #ffffff;
+  transform: scale(calc(0.54 + var(--intro-progress, 0) * 0.46));
+  transform-origin: left bottom;
+  opacity: 0;
+  text-shadow: 0 18px 60px rgba(0,0,0,0.45);
+}
+
+.intro-counter-label {
+  display: none;
+}
+
+.intro-progress {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: 24px;
+  height: 1px;
+  background: rgba(255,255,255,0.14);
+  overflow: hidden;
+  z-index: 3;
+}
+
+#intro-progress-bar {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(255,255,255,0.78), rgba(255,255,255,1));
+  transform-origin: left center;
+  transform: scaleX(0);
+}
+
+.intro-shutter {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(0,0,0,0.98), rgba(3,3,3,0.95));
+  z-index: 1;
+  transition: transform 1.05s var(--intro-ease);
+}
+
+.intro-shutter-top {
+  top: 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.intro-shutter-bottom {
+  bottom: 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+#intro-screen.is-live #intro-counter {
+  opacity: 1;
+}
+
+#intro-screen.is-unmasking .intro-shutter-top {
+  transform: translateY(-104%);
+}
+
+#intro-screen.is-unmasking .intro-shutter-bottom {
+  transform: translateY(104%);
+}
+
+#intro-screen.is-unmasking #intro-counter,
+#intro-screen.is-unmasking .intro-counter-wrap {
+  opacity: 0;
+  transition:
+    opacity 0.6s cubic-bezier(0.4, 0, 1, 1),
+    transform 0.9s var(--intro-ease);
+}
+
+#intro-screen.is-unmasking #intro-counter {
+  transform: translateX(-2%) scale(1.04);
+}
+
+#intro-screen.is-finished {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.7s var(--intro-ease), visibility 0.7s step-end;
 }
 /* ── YOUTUBE BACKGROUND ── */
 #yt-bg-wrap {
@@ -207,21 +386,30 @@ body.timer-running #bg-layer { transform: scale(1.06); }
 .quote-tag {
   font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase !important; color: rgba(232,213,176,0.68);
 }
-.quote-refresh {
-  width: 28px; height: 28px; border-radius: 50%;
-  backdrop-filter: blur(var(--ui-blur)) saturate(180%); -webkit-backdrop-filter: blur(var(--ui-blur)) saturate(180%);
-  background: var(--glass-bg); border-top: 1px solid var(--glass-border-t); border-left: 1px solid var(--glass-border-l); border-right: 1px solid var(--glass-border-r); border-bottom: 1px solid var(--glass-border-b);
-  box-shadow: var(--glass-shadow); color: var(--muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s; padding: 0; font-size: 14px;
+#quote-content {
+  font-size: 12px;
+  line-height: 1.9;
+  color: rgba(255,255,255,0.54);
+  transition: opacity 0.6s;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.44);
 }
-.quote-refresh:hover { color: var(--text); background: linear-gradient(135deg, rgba(255,255,255,0.22), rgba(255,255,255,0.10)); }
-#quote-text {
-  font-family: 'DM Serif Display', serif; font-style: italic; font-size: 14px; line-height: 1.65; color: rgba(255,255,255,0.7); transition: opacity 0.6s; text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+.quote-main {
+  font-family: 'Prata', serif;
+  font-style: italic;
+  font-size: 15px;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.76);
 }
-#quote-mindset {
-  margin-top: 10px; font-size: 11px; line-height: 1.7; color: rgba(255,255,255,0.48); transition: opacity 0.6s;
+.quote-divider {
+  display: inline-block;
+  margin: 0 0.42em;
+  color: rgba(232,213,176,0.52);
+}
+.quote-note {
+  color: rgba(255,255,255,0.52);
 }
 #quote-author {
-  font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase !important; color: rgba(255,255,255,0.4); margin-top: 5px; transition: opacity 0.6s;
+  font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase !important; color: rgba(255,255,255,0.4); margin-top: 8px; transition: opacity 0.6s;
 }
 
 /* ── CLOCK CENTER ── */
@@ -481,7 +669,7 @@ input[type="color"]::-webkit-color-swatch { border: 1px solid rgba(255,255,255,0
 .notif-card { position: relative; z-index: 1; backdrop-filter: blur(32px) saturate(220%); background: linear-gradient(145deg, rgba(20,20,24,0.82), rgba(10,10,12,0.88)); border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 24px 70px rgba(0,0,0,0.55); border-radius: 24px; padding: 36px 44px; text-align: center; max-width: 360px; width: calc(100vw - 48px); transform: scale(0.85); transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1); }
 #notification.show .notif-card { transform: scale(1); }
 .notif-icon { font-size: 40px; margin-bottom: 14px; }
-.notif-title { font-family: 'DM Serif Display', serif; font-size: 24px; color: var(--accent); margin-bottom: 10px; }
+.notif-title { font-family: 'Prata', serif; font-size: 24px; color: var(--accent); margin-bottom: 10px; }
 .notif-msg { font-family: 'SF Pro', sans-serif; font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.75; margin-bottom: 24px; white-space: pre-line; }
 #notif-dismiss { background: linear-gradient(135deg, rgba(232,213,176,0.2), rgba(232,213,176,0.07)); border: 1px solid rgba(232,213,176,0.3); color: var(--accent); font-family: 'SF Pro', sans-serif; font-size: 12px; padding: 10px 28px; border-radius: 22px; cursor: pointer; transition: all 0.2s; letter-spacing: 0.06em; }
 #notif-dismiss:hover { background: linear-gradient(135deg,rgba(232,213,176,0.3),rgba(232,213,176,0.12)); }
@@ -559,10 +747,10 @@ body.touch-mode #touch-hint { display: block; }
 #file-input { display: none; }
 
 /* ── BUTTON INTERACTION EFFECTS ── */
-.ctrl-btn, .nav-btn, .tool-btn, .small-btn, #notif-dismiss, .panel-close, .music-tab, .font-opt, .quote-refresh, .todo-add-btn, .settings-tab-btn {
+.ctrl-btn, .nav-btn, .tool-btn, .small-btn, #notif-dismiss, .panel-close, .music-tab, .font-opt, .todo-add-btn, .settings-tab-btn {
   position: relative; overflow: hidden; transform: scale(1); transition: all 0.18s cubic-bezier(0.34,1.4,0.64,1), transform 0.12s cubic-bezier(0.34,1.4,0.64,1); user-select: none; -webkit-tap-highlight-color: transparent;
 }
-.ctrl-btn:active, .nav-btn:active, .tool-btn:active, .small-btn:active, #notif-dismiss:active, .panel-close:active, .music-tab:active, .font-opt:active, .quote-refresh:active, .todo-add-btn:active, .settings-tab-btn:active {
+.ctrl-btn:active, .nav-btn:active, .tool-btn:active, .small-btn:active, #notif-dismiss:active, .panel-close:active, .music-tab:active, .font-opt:active, .todo-add-btn:active, .settings-tab-btn:active {
   transform: scale(0.93) !important; filter: brightness(0.88); transition: transform 0.07s ease, filter 0.07s ease !important;
 }
 .ripple { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.22); transform: scale(0); animation: rippleAnim 0.5s cubic-bezier(0.4,0,0.2,1) forwards; pointer-events: none; }
@@ -574,6 +762,16 @@ body.touch-mode #touch-hint { display: block; }
 
 /* ── MOBILE RESPONSIVE ── */
 @media (max-width: 600px) {
+  .intro-counter-wrap {
+    left: 18px;
+    right: 18px;
+    bottom: 32px;
+  }
+  .intro-progress {
+    left: 18px;
+    right: 18px;
+    bottom: 18px;
+  }
   #nav { top: 16px; left: 16px; gap: 6px; }
   #nav-row1 { flex-wrap: wrap; gap: 5px; }
   .nav-logo { width: 26px; height: 26px; }
@@ -616,7 +814,18 @@ body.touch-mode #touch-hint { display: block; }
 .panel { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.08) transparent; }
 </style>
 </head>
-<body>
+<body class="intro-active">
+
+<div id="intro-screen" aria-hidden="true">
+  <div class="intro-counter-wrap">
+    <div id="intro-counter">00</div>
+  </div>
+  <div class="intro-progress">
+    <div id="intro-progress-bar"></div>
+  </div>
+  <div class="intro-shutter intro-shutter-top"></div>
+  <div class="intro-shutter intro-shutter-bottom"></div>
+</div>
 
 <!-- Background -->
 <div id="bg-layer">
@@ -663,10 +872,12 @@ body.touch-mode #touch-hint { display: block; }
 <div id="quote-box">
   <div class="quote-topline">
     <div class="quote-tag" id="quote-tag" data-i18n="quoteTag">Mindset</div>
-    <button class="quote-refresh" onclick="nextQuote()" data-i18n-title="toolRefreshQuote" title="Đổi câu khác">↻</button>
   </div>
-  <div id="quote-text"></div>
-  <div id="quote-mindset"></div>
+  <div id="quote-content">
+    <span class="quote-main" id="quote-main"></span>
+    <span class="quote-divider" aria-hidden="true">·</span>
+    <span class="quote-note" id="quote-note"></span>
+  </div>
   <div id="quote-author"></div>
 </div>
 
@@ -1049,7 +1260,7 @@ const TRANS = {
     ytBgPh:'Dán link YouTube vào đây…', applyVideoBg:'Áp dụng video nền', clearVideoBg:'Xóa video nền',
     breakBadge:'Giải lao', notifDismiss:'Tiếp tục thôi',
     langCurrent:'Tiếng Việt', clearDone: 'Xóa việc đã xong', taskLeft: 'việc còn lại',
-    quoteTag:'Mindset', toolRefreshQuote:'Đổi quote', toolPip:'Cửa sổ nổi', toolBg:'Hình nền',
+    quoteTag:'Mindset', toolPip:'Cửa sổ nổi', toolBg:'Hình nền',
     toolMusic:'Nhạc nền', toolNotes:'Ghi chú', toolStats:'Tiến độ hôm nay', toolDim:'Tối mờ',
     toolSettings:'Cài đặt', toolFullscreen:'Toàn màn hình', toolExitFullscreen:'Thoát toàn màn hình',
     toolClosePlayer:'Đóng cửa sổ nổi', titleExportNotes:'Tải về file .txt',
@@ -1125,7 +1336,7 @@ const TRANS = {
     ytBgPh:'Paste YouTube link here…', applyVideoBg:'Apply video', clearVideoBg:'Clear video',
     breakBadge:'Break', notifDismiss:'Continue',
     langCurrent:'English', clearDone: 'Clear done', taskLeft: 'tasks left',
-    quoteTag:'Mindset', toolRefreshQuote:'Next quote', toolPip:'Floating player', toolBg:'Background',
+    quoteTag:'Mindset', toolPip:'Floating player', toolBg:'Background',
     toolMusic:'Music', toolNotes:'Notes', toolStats:'Today progress', toolDim:'Dim mode',
     toolSettings:'Settings', toolFullscreen:'Fullscreen', toolExitFullscreen:'Exit fullscreen',
     toolClosePlayer:'Close floating player', titleExportNotes:'Download .txt file',
@@ -1215,8 +1426,8 @@ function setLang(isEn) {
   savePrefs();
 }
 
-/* ── CONSTANTS: QUOTES ── */
-const QUOTES_EN = [
+/* ── CONSTANTS: MINDSETS ── */
+const MINDSETS_EN = [
   { text: "Your time is limited, so don't waste it living someone else's life.", author: "Steve Jobs", mindset: "Protect attention and build around what matters, not noise." },
   { text: "The difference between successful people and really successful people is that really successful people say no to almost everything.", author: "Warren Buffett", mindset: "Focus grows when you reject low-value work early." },
   { text: "Great things come from hard work and perseverance. No excuses.", author: "Kobe Bryant", mindset: "Consistency matters more than mood when the work gets heavy." },
@@ -1232,7 +1443,7 @@ const QUOTES_EN = [
   { text: "Whether you think you can, or you think you can't, you're right.", author: "Henry Ford", mindset: "Belief shapes effort, and effort changes outcomes." }
 ];
 
-const QUOTES_VI = [
+const MINDSETS_VI = [
   { text: "Thời gian của bạn là có hạn, đừng lãng phí nó để sống cuộc đời của người khác.", author: "Steve Jobs", mindset: "Giữ sự chú ý cho điều quan trọng, đừng để nó bị nuốt bởi tạp âm." },
   { text: "Sự khác biệt giữa người thành công và người cực kỳ thành công là người cực kỳ thành công nói không với gần như mọi thứ.", author: "Warren Buffett", mindset: "Sự tập trung mạnh lên khi bạn từ chối sớm những việc giá trị thấp." },
   { text: "Những điều lớn lao đến từ lao động chăm chỉ và sự bền bỉ. Không viện cớ.", author: "Kobe Bryant", mindset: "Kỷ luật ổn định luôn mạnh hơn cảm hứng nhất thời." },
@@ -1258,7 +1469,7 @@ let currentSecs = 0;
 let timerInterval = null;
 let clockInterval = null;
 let quoteInterval = null;
-let quoteIdx = Math.floor(Math.random() * QUOTES_VI.length);
+let quoteIdx = Math.floor(Math.random() * MINDSETS_VI.length);
 let pomoSession = 0;
 let pomoCount = 0;
 let fpOpen = false;
@@ -1620,42 +1831,93 @@ function renderTodos() {
 }
 
 /* ── QUOTES ── */
+function setQuoteContent(q) {
+  document.getElementById('quote-tag').textContent = t('quoteTag');
+  document.getElementById('quote-main').textContent = '\u201c' + q.text + '\u201d';
+  document.getElementById('quote-note').textContent = q.mindset;
+  document.getElementById('quote-author').textContent = '\u2014 ' + q.author;
+}
+
 function renderQuote(animate = true) {
-  const quotePool = lang === 'en' ? QUOTES_EN : QUOTES_VI;
+  const quotePool = lang === 'en' ? MINDSETS_EN : MINDSETS_VI;
   const q = quotePool[quoteIdx % quotePool.length];
-  const el = document.getElementById('quote-text');
-  const mood = document.getElementById('quote-mindset');
+  const content = document.getElementById('quote-content');
   const author = document.getElementById('quote-author');
   if (!animate) {
-    document.getElementById('quote-tag').textContent = t('quoteTag');
-    el.textContent = '\u201c' + q.text + '\u201d';
-    mood.textContent = q.mindset;
-    author.textContent = '\u2014 ' + q.author;
-    el.style.opacity = 1;
-    mood.style.opacity = 1;
+    setQuoteContent(q);
+    content.style.opacity = 1;
     author.style.opacity = 1;
     return;
   }
-  el.style.opacity = 0;
-  mood.style.opacity = 0;
+  content.style.opacity = 0;
   author.style.opacity = 0;
   setTimeout(() => {
-    document.getElementById('quote-tag').textContent = t('quoteTag');
-    document.getElementById('quote-text').textContent = '\u201c' + q.text + '\u201d';
-    document.getElementById('quote-mindset').textContent = q.mindset;
-    document.getElementById('quote-author').textContent = '\u2014 ' + q.author;
-    el.style.opacity = 1;
-    mood.style.opacity = 1;
+    setQuoteContent(q);
+    content.style.opacity = 1;
     author.style.opacity = 1;
   }, 400);
 }
-
-function nextQuote() {
+renderQuote(false);
+quoteInterval = setInterval(() => {
   quoteIdx++;
   renderQuote(true);
+}, 20000);
+
+/* ── INTRO REVEAL ── */
+let introDone = false;
+
+function setIntroProgress(value) {
+  const counter = document.getElementById('intro-counter');
+  const bar = document.getElementById('intro-progress-bar');
+  const clamped = Math.max(0, Math.min(100, value));
+  if (!counter || !bar) return;
+  counter.textContent = clamped < 100 ? String(Math.round(clamped)).padStart(2, '0') : '100';
+  counter.style.setProperty('--intro-progress', (clamped / 100).toFixed(4));
+  bar.style.transform = 'scaleX(' + (clamped / 100).toFixed(4) + ')';
 }
-renderQuote(false);
-quoteInterval = setInterval(nextQuote, 20000);
+
+function finishIntro() {
+  const intro = document.getElementById('intro-screen');
+  if (!intro || introDone) return;
+  introDone = true;
+  intro.classList.add('is-unmasking');
+  document.body.classList.remove('intro-active');
+  setTimeout(() => intro.classList.add('is-finished'), 680);
+  setTimeout(() => intro.remove(), 1250);
+}
+
+function startIntro() {
+  const intro = document.getElementById('intro-screen');
+  const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!intro || introDone) {
+    document.body.classList.remove('intro-active');
+    return;
+  }
+
+  setIntroProgress(0);
+  requestAnimationFrame(() => intro.classList.add('is-live'));
+
+  if (prefersReduced) {
+    setIntroProgress(100);
+    setTimeout(finishIntro, 120);
+    return;
+  }
+
+  const duration = 3200;
+  const startedAt = performance.now();
+  const frame = now => {
+    const raw = Math.min(1, (now - startedAt) / duration);
+    const eased = 1 - Math.pow(1 - raw, 3);
+    setIntroProgress(eased * 100);
+    if (raw < 1) {
+      requestAnimationFrame(frame);
+      return;
+    }
+    setTimeout(finishIntro, 220);
+  };
+
+  requestAnimationFrame(frame);
+}
 
 /* ── MODE SWITCH ── */
 function switchMode(m) {
@@ -2291,7 +2553,7 @@ async function toggleFloatingPlayer() {
         font-family: 'SF Pro', 'DM Mono', sans-serif;
       }
       body.font-mono * { font-family: 'DM Mono', monospace !important; }
-      body.font-serif * { font-family: 'DM Serif Display', serif !important; }
+      body.font-serif * { font-family: 'Prata', serif !important; }
       body.font-condensed #fp-time { font-family: 'SF Pro', monospace !important; font-variation-settings: 'wdth' 47, 'opsz' 28, 'wght' 120 !important; }
       
       #pip-bg {
@@ -2463,7 +2725,7 @@ document.addEventListener('pointercancel', () => {
   holdTriggered = false;
 });
 document.addEventListener('pointerdown', e => {
-  const btn = e.target.closest('.ctrl-btn, .nav-btn, .tool-btn, .small-btn, #notif-dismiss, .panel-close, .music-tab, .quote-refresh, .todo-add-btn, .settings-tab-btn, .font-opt');
+  const btn = e.target.closest('.ctrl-btn, .nav-btn, .tool-btn, .small-btn, #notif-dismiss, .panel-close, .music-tab, .todo-add-btn, .settings-tab-btn, .font-opt');
   if (!btn) return;
   const rect = btn.getBoundingClientRect();
   const size = Math.max(rect.width, rect.height) * 1.5;
@@ -2582,6 +2844,8 @@ render();
 renderStats();
 updateDynamicTooltips();
 syncFloatingPlayerState();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(startIntro).catch(startIntro);
+else startIntro();
 
 /* ── CLOCK DIM MODE ── */
 function toggleClockDim() {
