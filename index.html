@@ -12,6 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Prata&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <link rel="icon" href="https://media1.tenor.com/m/8vFVhn_hy4MAAAAd/cat-vibes.gif" type="image/gif">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -83,6 +84,8 @@ body.font-condensed #fp-time {
 #intro-screen,
 #intro-screen * {
   font-family: 'SF Pro', 'DM Mono', sans-serif !important;
+}
+#intro-screen *:not(#intro-counter):not(.intro-char) {
   font-variation-settings: normal !important;
 }
 
@@ -223,9 +226,12 @@ body.intro-active #app {
 }
 
 #intro-counter {
-  font-size: clamp(92px, 20vw, 240px);
-  line-height: 0.72;
-  letter-spacing: -0.08em;
+  font-size: clamp(140px, 28vw, 400px);
+  line-height: 0.80;
+  letter-spacing: -0.05em;
+  font-family: 'SF Pro', 'DM Mono', sans-serif;
+  font-variation-settings: normal;
+  font-weight: 200;
   color: #ffffff;
   transform: scale(calc(0.54 + var(--intro-progress, 0) * 0.46));
   transform-origin: left bottom;
@@ -235,6 +241,36 @@ body.intro-active #app {
 
 .intro-counter-label {
   display: none;
+}
+
+.intro-char-wrap {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+}
+
+.intro-char {
+  display: inline-block;
+  will-change: transform;
+}
+
+/* ── QUOTE BOX CLICKABLE ── */
+#quote-box {
+  cursor: pointer;
+  user-select: none;
+}
+#quote-box:hover .quote-tag {
+  color: rgba(232,213,176,0.95);
+  transition: color 0.2s;
+}
+#quote-box .quote-tag::after {
+  content: ' ↕';
+  opacity: 0;
+  font-size: 8px;
+  transition: opacity 0.2s;
+}
+#quote-box:hover .quote-tag::after {
+  opacity: 0.5;
 }
 
 .intro-progress {
@@ -406,7 +442,11 @@ body.intro-active #app {
   color: rgba(232,213,176,0.52);
 }
 .quote-note {
-  color: rgba(255,255,255,0.52);
+  font-family: 'Prata', serif;
+  font-style: italic;
+  font-size: 15px;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.76);
 }
 #quote-author {
   font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase !important; color: rgba(255,255,255,0.4); margin-top: 8px; transition: opacity 0.6s;
@@ -495,7 +535,8 @@ body.timer-running .time-colon { animation: none; opacity: 1; }
 .time-sep { color: var(--muted); font-size: 22px; font-family: 'DM Mono', monospace; }
 
 /* ── RUNNING STATE — hide UI ── */
-body.timer-running #nav, body.timer-running #quote-box, body.timer-running #bottom-left, body.timer-running #btn-settings { opacity: 0; pointer-events: none; transition: opacity 0.5s ease; }
+body.timer-running #nav, body.timer-running #bottom-left, body.timer-running #btn-settings { opacity: 0; pointer-events: none; transition: opacity 0.5s ease; }
+body.timer-running #quote-box { opacity: 1 !important; pointer-events: all !important; }
 body.timer-running #controls { opacity: 0.15; transition: opacity 0.3s ease; }
 body.timer-running #controls:hover { opacity: 1; }
 body.timer-running #btn-zen { opacity: 0.15; }
@@ -1470,6 +1511,7 @@ let timerInterval = null;
 let clockInterval = null;
 let quoteInterval = null;
 let quoteIdx = Math.floor(Math.random() * MINDSETS_VI.length);
+let quoteShowMode = 'quote'; // 'quote' | 'mindset'
 let pomoSession = 0;
 let pomoCount = 0;
 let fpOpen = false;
@@ -1832,10 +1874,27 @@ function renderTodos() {
 
 /* ── QUOTES ── */
 function setQuoteContent(q) {
-  document.getElementById('quote-tag').textContent = t('quoteTag');
-  document.getElementById('quote-main').textContent = '\u201c' + q.text + '\u201d';
-  document.getElementById('quote-note').textContent = q.mindset;
-  document.getElementById('quote-author').textContent = '\u2014 ' + q.author;
+  const main = document.getElementById('quote-main');
+  const divider = document.querySelector('#quote-content .quote-divider');
+  const note = document.getElementById('quote-note');
+  const author = document.getElementById('quote-author');
+  const tag = document.getElementById('quote-tag');
+
+  if (quoteShowMode === 'mindset') {
+    tag.textContent = lang === 'vi' ? 'Mindset' : 'Mindset';
+    main.style.display = 'none';
+    if (divider) divider.style.display = 'none';
+    note.style.display = '';
+    note.textContent = q.mindset.replace(/[.。,،]+$/, '');
+    author.textContent = '';
+  } else {
+    tag.textContent = lang === 'vi' ? 'Quote' : 'Quote';
+    main.style.display = '';
+    if (divider) divider.style.display = 'none';
+    note.style.display = 'none';
+    main.textContent = '\u201c' + q.text.replace(/[.。,،]+$/, '') + '\u201d';
+    author.textContent = '\u2014 ' + q.author;
+  }
 }
 
 function renderQuote(animate = true) {
@@ -1858,6 +1917,10 @@ function renderQuote(animate = true) {
   }, 400);
 }
 renderQuote(false);
+document.getElementById('quote-box').addEventListener('click', () => {
+  quoteShowMode = quoteShowMode === 'quote' ? 'mindset' : 'quote';
+  renderQuote(true);
+});
 quoteInterval = setInterval(() => {
   quoteIdx++;
   renderQuote(true);
@@ -1884,6 +1947,29 @@ function finishIntro() {
   document.body.classList.remove('intro-active');
   setTimeout(() => intro.classList.add('is-finished'), 680);
   setTimeout(() => intro.remove(), 1250);
+}
+
+function animateIntroOut() {
+  const counter = document.getElementById('intro-counter');
+  if (!counter) { finishIntro(); return; }
+
+  // Wrap từng ký tự trong một hộp overflow:hidden — char trượt trái, bị cắt bởi chính hộp đó
+  const chars = [...counter.textContent];
+  counter.innerHTML = chars
+    .map(c => `<span class="intro-char-wrap"><span class="intro-char">${c}</span></span>`)
+    .join('');
+
+  if (typeof gsap !== 'undefined') {
+    gsap.to('#intro-counter .intro-char', {
+      xPercent: -110,
+      duration: 0.42,
+      stagger: { each: 0.10, from: 'end' },
+      ease: 'power3.in',
+      onComplete: finishIntro
+    });
+  } else {
+    setTimeout(finishIntro, 400);
+  }
 }
 
 function startIntro() {
@@ -1913,7 +1999,7 @@ function startIntro() {
       requestAnimationFrame(frame);
       return;
     }
-    setTimeout(finishIntro, 220);
+    animateIntroOut();
   };
 
   requestAnimationFrame(frame);
@@ -2660,7 +2746,7 @@ function handleClockTap(e) {
   if (!touchMode) return;
   if (isDragging) return;
   if (e.target.closest('.time-input')) return;
-  if (e.target.closest('input, button, .ctrl-btn, .panel, #nav, #bottom-left, #bottom-right, #floating-player, #notification, #break-badge, .tool-btn, .nav-btn, .music-tab, .toggle, select, textarea')) return;
+  if (e.target.closest('input, button, .ctrl-btn, .panel, #nav, #bottom-left, #bottom-right, #floating-player, #notification, #break-badge, .tool-btn, .nav-btn, .music-tab, .toggle, select, textarea, #quote-box')) return;
   
   e.preventDefault();
   e.stopPropagation();
