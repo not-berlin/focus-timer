@@ -73,19 +73,24 @@ body.font-serif, body.font-serif * {
   font-family: 'Prata', serif !important;
   font-variation-settings: normal !important;
 }
-/* Font SF Pro Condensed — chỉ áp dụng cho mặt đồng hồ */
+/* Font SF Pro Condensed — chỉ áp dụng cho mặt đồng hồ và intro */
 body.font-condensed #time-display,
-body.font-condensed #fp-time {
+body.font-condensed #fp-time,
+body.font-condensed #intro-counter {
   font-family: 'SF Pro', 'DM Mono', monospace !important;
   font-variation-settings: 'wdth' 47, 'opsz' 28, 'wght' 120.70000762951095 !important;
   letter-spacing: -0.01em !important;
 }
 
-#intro-screen,
-#intro-screen * {
-  font-family: 'SF Pro', 'DM Mono', sans-serif !important;
+/* Serif — Prata chỉ có weight 400, ascender cao hơn SF Pro nên cần line-height đủ lớn */
+body.font-serif #intro-counter {
+  font-weight: 400 !important;
+  font-variation-settings: normal !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.03em !important;
 }
-#intro-screen *:not(#intro-counter):not(.intro-char) {
+
+#intro-screen *:not(#intro-counter):not(.intro-char-wrap):not(.intro-char) {
   font-variation-settings: normal !important;
 }
 
@@ -229,8 +234,8 @@ body.intro-active #app {
   font-size: clamp(140px, 28vw, 400px);
   line-height: 0.80;
   letter-spacing: -0.05em;
-  font-family: 'SF Pro', 'DM Mono', sans-serif;
-  font-variation-settings: normal;
+  font-family: 'SF Pro', 'DM Mono', monospace;
+  font-variation-settings: 'wdth' 130, 'opsz' 36;
   font-weight: 200;
   color: #ffffff;
   transform: scale(calc(0.54 + var(--intro-progress, 0) * 0.46));
@@ -251,6 +256,8 @@ body.intro-active #app {
 
 .intro-char {
   display: inline-block;
+  font: inherit;
+  font-variation-settings: inherit;
   will-change: transform;
 }
 
