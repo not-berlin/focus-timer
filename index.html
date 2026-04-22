@@ -14,913 +14,55 @@
 <link href="https://fonts.googleapis.com/css2?family=Prata&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <link rel="icon" href="https://media1.tenor.com/m/8vFVhn_hy4MAAAAd/cat-vibes.gif" type="image/gif">
-<style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-@font-face {
-  font-family: 'SF Pro';
-  src: url('SF-Pro.woff2') format('woff2-variations');
-  font-weight: 100 900;
-  font-stretch: 50% 200%;
-}
-
-:root {
-  --bg: #080808;
-  --surface: rgba(255,255,255,0.04);
-  --border: rgba(255,255,255,0.08);
-  --text: rgba(255,255,255,0.92);
-  --muted: rgba(255,255,255,0.4);
-  --accent: #e8d5b0;
-  --accent2: #a8c4b8;
-  --danger: #c97b6e;
-  --focus-blur: 8px;
-  --focus-dim: 0.55;
-  --clock-scale: 1;
-  --ui-blur: 14px;
-  
-  /* Clock custom vars */
-  --clock-color: #ffffff;
-  --clock-opacity: 1;
-  --clock-blur: 0px;
-
-  /* glass */
-  --glass-bg: linear-gradient(135deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.06) 60%, rgba(255,255,255,0.10) 100%);
-  --glass-border-t: rgba(255,255,255,0.32);
-  --glass-border-l: rgba(255,255,255,0.20);
-  --glass-border-r: rgba(255,255,255,0.06);
-  --glass-border-b: rgba(255,255,255,0.06);
-  --glass-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.10);
-  --intro-ease: cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-html, body {
-  height: 100%;
-  overflow: hidden;
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'SF Pro', 'DM Mono', sans-serif;
-  font-weight: 300;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* Lớp Font đè lên cho Setting Font */
-body.font-mono, body.font-mono * {
-  font-family: 'DM Mono', monospace !important;
-  font-variation-settings: normal !important;
-}
-body.font-serif, body.font-serif * {
-  font-family: 'Prata', serif !important;
-  font-variation-settings: normal !important;
-}
-/* Font SF Pro Condensed — chỉ áp dụng cho mặt đồng hồ và intro */
-body.font-condensed #time-display,
-body.font-condensed #fp-time,
-body.font-condensed #intro-counter {
-  font-family: 'SF Pro', 'DM Mono', monospace !important;
-  font-variation-settings: 'wdth' 47, 'opsz' 28, 'wght' 120.70000762951095 !important;
-  letter-spacing: -0.01em !important;
-}
-
-/* Serif — Prata chỉ có weight 400, ascender cao hơn SF Pro nên cần line-height đủ lớn */
-body.font-serif #intro-counter {
-  font-weight: 400 !important;
-  font-variation-settings: normal !important;
-  line-height: 1.15 !important;
-  letter-spacing: -0.03em !important;
-}
-
-#intro-screen *:not(#intro-counter):not(.intro-char-wrap):not(.intro-char) {
-  font-variation-settings: normal !important;
-}
-
-/* ── BACKGROUND ── */
-#bg-layer {
-  position: fixed; inset: 0;
-  background: #080808;
-  background-size: cover;
-  background-position: center;
-  transition: filter 1.2s ease, opacity 1.2s ease, transform 1.4s cubic-bezier(0.25,0.46,0.45,0.94);
-  z-index: 0;
-  transform: scale(1);
-  will-change: transform;
-}
-#bg-layer::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: rgba(0,0,0,0.42);
-  transition: background 1.2s ease;
-}
-#bg-layer.focused::after { background: rgba(0,0,0,var(--focus-dim)); }
-#bg-layer.focused { filter: blur(var(--focus-blur)); }
-body.timer-running #bg-layer { transform: scale(1.06); }
-
-/* Lớp ảnh nền mới — cross-fade khi thay ảnh */
-#bg-new {
-  position: fixed; inset: 0;
-  background-size: cover;
-  background-position: center;
-  z-index: 0;
-  opacity: 0;
-  transform: scale(1.04);
-  transition: opacity 0.9s cubic-bezier(0.4,0,0.2,1), transform 1.2s cubic-bezier(0.25,0.46,0.45,0.94);
-  pointer-events: none;
-}
-#bg-new.reveal {
-  opacity: 1;
-  transform: scale(1);
-}
-#bg-new::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: rgba(0,0,0,0.42); 
-  transition: background 1.2s ease;
-}
-
-#bg-new.focused::after { 
-  background: rgba(0,0,0,var(--focus-dim)); 
-}
-#bg-new.focused { 
-  filter: blur(var(--focus-blur)); 
-}
-
-body.intro-active #bg-layer,
-body.intro-active #bg-new {
-  transform: scale(1.08);
-}
-
-body.intro-active #nav,
-body.intro-active #quote-box,
-body.intro-active #app,
-body.intro-active #bottom-left,
-body.intro-active #bottom-right,
-body.intro-active #break-badge {
-  opacity: 0;
-  pointer-events: none;
-  filter: blur(12px);
-}
-
-body.intro-active #nav,
-body.intro-active #quote-box,
-body.intro-active #bottom-left,
-body.intro-active #bottom-right,
-body.intro-active #break-badge {
-  transform: translateY(26px) scale(0.98);
-}
-
-body.intro-active #app {
-  transform: translateY(40px) scale(0.985);
-}
-
-#nav,
-#quote-box,
-#app,
-#bottom-left,
-#bottom-right,
-#break-badge {
-  transition:
-    opacity 0.9s var(--intro-ease),
-    transform 0.9s var(--intro-ease),
-    filter 0.9s var(--intro-ease);
-}
-
-/* ── INTRO REVEAL ── */
-#intro-screen {
-  position: fixed;
-  inset: 0;
-  z-index: 120;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 50% 42%, rgba(255,255,255,0.06), transparent 34%),
-    linear-gradient(180deg, rgba(15,15,15,0.98) 0%, rgba(3,3,3,1) 100%);
-  color: rgba(255,255,255,0.96);
-  pointer-events: none;
-}
-
-#intro-screen::before,
-#intro-screen::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-}
-
-#intro-screen::before {
-  background:
-    linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.035) 50%, transparent 100%),
-    repeating-linear-gradient(180deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 4px);
-  opacity: 0.14;
-  mix-blend-mode: screen;
-}
-
-#intro-screen::after {
-  background:
-    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1), transparent 46%),
-    linear-gradient(180deg, rgba(255,255,255,0.03), transparent 22%, transparent 78%, rgba(255,255,255,0.03));
-  opacity: 0.22;
-}
-
-.intro-counter-wrap {
-  position: absolute;
-  z-index: 2;
-}
-
-.intro-counter-wrap {
-  left: 24px;
-  right: 24px;
-  bottom: 38px;
-}
-
-#intro-counter {
-  font-size: clamp(140px, 28vw, 400px);
-  line-height: 0.80;
-  letter-spacing: -0.05em;
-  font-family: 'SF Pro', 'DM Mono', monospace;
-  font-variation-settings: 'wdth' 130, 'opsz' 36;
-  font-weight: 200;
-  color: #ffffff;
-  transform: scale(calc(0.54 + var(--intro-progress, 0) * 0.46));
-  transform-origin: left bottom;
-  opacity: 0;
-  text-shadow: 0 18px 60px rgba(0,0,0,0.45);
-}
-
-.intro-counter-label {
-  display: none;
-}
-
-.intro-char-wrap {
-  display: inline-block;
-  overflow: hidden;
-  vertical-align: bottom;
-}
-
-.intro-char {
-  display: inline-block;
-  font: inherit;
-  font-variation-settings: inherit;
-  will-change: transform;
-}
-
-/* ── QUOTE BOX CLICKABLE ── */
-#quote-box {
-  cursor: pointer;
-  user-select: none;
-}
-#quote-box:hover .quote-tag {
-  color: rgba(232,213,176,0.95);
-  transition: color 0.2s;
-}
-
-.intro-progress {
-  position: absolute;
-  left: 24px;
-  right: 24px;
-  bottom: 24px;
-  height: 1px;
-  background: rgba(255,255,255,0.14);
-  overflow: hidden;
-  z-index: 3;
-}
-
-#intro-progress-bar {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, rgba(255,255,255,0.78), rgba(255,255,255,1));
-  transform-origin: left center;
-  transform: scaleX(0);
-}
-
-.intro-shutter {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 50%;
-  background: linear-gradient(180deg, rgba(0,0,0,0.98), rgba(3,3,3,0.95));
-  z-index: 1;
-  transition: transform 1.05s var(--intro-ease);
-}
-
-.intro-shutter-top {
-  top: 0;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-
-.intro-shutter-bottom {
-  bottom: 0;
-  border-top: 1px solid rgba(255,255,255,0.06);
-}
-
-#intro-screen.is-live #intro-counter {
-  opacity: 1;
-}
-
-#intro-screen.is-unmasking .intro-shutter-top {
-  transform: translateY(-104%);
-}
-
-#intro-screen.is-unmasking .intro-shutter-bottom {
-  transform: translateY(104%);
-}
-
-#intro-screen.is-unmasking #intro-counter,
-#intro-screen.is-unmasking .intro-counter-wrap {
-  opacity: 0;
-  transition:
-    opacity 0.6s cubic-bezier(0.4, 0, 1, 1),
-    transform 0.9s var(--intro-ease);
-}
-
-#intro-screen.is-unmasking #intro-counter {
-  transform: translateX(-2%) scale(1.04);
-}
-
-#intro-screen.is-finished {
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.7s var(--intro-ease), visibility 0.7s step-end;
-}
-/* ── YOUTUBE BACKGROUND ── */
-#yt-bg-wrap {
-  position: fixed; inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
-  display: none;
-}
-#yt-bg-wrap.active { display: block; }
-#yt-bg-wrap iframe {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  width: 177.78vh; height: 100vh;
-  min-width: 100vw; min-height: 56.25vw;
-  border: none; pointer-events: none;
-}
-#yt-bg-wrap::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: rgba(0,0,0,0.42);
-  pointer-events: none;
-}
-
-/* ── APP LAYOUT ── */
-#app {
-  position: fixed; inset: 0; z-index: 1;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  pointer-events: none;
-}
-#app > * { pointer-events: all; }
-
-#clock-display {
-  position: relative; text-align: center; user-select: none;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-}
-
-/* ── NAV ── */
-#nav {
-  position: fixed; top: 24px; left: 24px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; z-index: 10; pointer-events: all; transition: opacity 0.5s ease;
-}
-#nav-row1 { display: flex; gap: 6px; align-items: center; }
-.nav-logo { width: 32px; height: 32px; flex-shrink: 0; margin-right: 4px; opacity: 0.85; transition: opacity 0.2s; }
-.nav-logo:hover { opacity: 1; }
-
-.nav-btn {
-  backdrop-filter: blur(var(--ui-blur)) saturate(180%); -webkit-backdrop-filter: blur(var(--ui-blur)) saturate(180%);
-  background: var(--glass-bg); border-top: 1px solid var(--glass-border-t); border-left: 1px solid var(--glass-border-l); border-right: 1px solid var(--glass-border-r); border-bottom: 1px solid var(--glass-border-b);
-  box-shadow: var(--glass-shadow); color: var(--muted);
-  font-family: 'SF Pro', sans-serif; font-size: 11px; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase !important;
-  padding: 7px 14px; border-radius: 20px; cursor: pointer; transition: all 0.2s; white-space: nowrap;
-}
-.nav-btn:hover { color: var(--text); background: linear-gradient(135deg, rgba(255,255,255,0.2),rgba(255,255,255,0.1)); }
-.nav-btn.active {
-  background: linear-gradient(135deg, rgba(232,213,176,0.22), rgba(232,213,176,0.08));
-  border-top-color: rgba(232,213,176,0.45); border-left-color: rgba(232,213,176,0.30);
-  color: var(--accent);
-}
-
-/* ── NAV COUNTDOWN ── */
-#nav-countdown {
-  display: flex; align-items: center; gap: 8px; padding: 5px 12px 5px 10px; border-radius: 20px;
-  backdrop-filter: blur(var(--ui-blur)) saturate(180%); -webkit-backdrop-filter: blur(var(--ui-blur)) saturate(180%);
-  background: linear-gradient(135deg, rgba(168,196,184,0.12), rgba(168,196,184,0.04));
-  border-top: 1px solid rgba(168,196,184,0.35); border-left: 1px solid rgba(168,196,184,0.22); border-right: 1px solid rgba(168,196,184,0.06); border-bottom: 1px solid rgba(168,196,184,0.06);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(168,196,184,0.15); max-width: fit-content;
-}
-.ncd-icon { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.7; }
-.ncd-label { font-family: 'SF Pro', monospace; font-size: 10px; letter-spacing: 0.08em; color: rgba(168,196,184,0.55); text-transform: uppercase !important; white-space: nowrap; }
-#ncd-time { font-family: 'SF Pro', 'DM Mono', monospace; font-size: 11.5px; font-weight: 400; letter-spacing: 0.06em; color: var(--accent2); font-feature-settings: 'tnum'; white-space: nowrap; }
-
-/* ── QUOTES ── */
-#quote-box {
-  position: fixed; top: 24px; right: 24px; max-width: 320px; text-align: right; z-index: 10; pointer-events: all; transition: opacity 0.5s ease;
-}
-.quote-topline {
-  display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-bottom: 8px;
-}
-.quote-tag {
-  font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase !important; color: rgba(232,213,176,0.68);
-}
-#quote-content {
-  font-size: 12px;
-  line-height: 1.9;
-  color: rgba(255,255,255,0.54);
-  transition: opacity 0.6s;
-  text-shadow: 0 2px 10px rgba(0,0,0,0.44);
-}
-.quote-main {
-  font-family: 'Prata', serif;
-  font-style: italic;
-  font-size: 15px;
-  line-height: 1.7;
-  color: rgba(255,255,255,0.76);
-}
-.quote-divider {
-  display: inline-block;
-  margin: 0 0.42em;
-  color: rgba(232,213,176,0.52);
-}
-.quote-note {
-  font-family: 'Prata', serif;
-  font-style: italic;
-  font-size: 15px;
-  line-height: 1.7;
-  color: rgba(255,255,255,0.76);
-}
-#quote-author {
-  font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase !important; color: rgba(255,255,255,0.4); margin-top: 8px; transition: opacity 0.6s;
-}
-
-/* ── CLOCK CENTER ── */
-#mode-label {
-  font-family: 'SF Pro', sans-serif; font-variation-settings: 'wdth' 132, 'opsz' 28, 'wght' 410; font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase !important; color: var(--muted); margin-bottom: 8px; height: 16px;
-}
-
-#time-display {
-  font-family: 'SF Pro', 'DM Mono', monospace;
-  font-variation-settings: 'wdth' 130, 'opsz' 36;
-  font-size: calc(clamp(88px, 15vw, 180px) * var(--clock-scale));
-  font-weight: 200; line-height: 1; letter-spacing: -0.03em;
-  color: var(--clock-color) !important;
-  opacity: var(--clock-opacity);
-  text-shadow: 0 0 var(--clock-blur) var(--clock-color);
-  transition: color 0.4s ease, font-size 0.8s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.3s, text-shadow 0.3s;
-  font-feature-settings: 'tnum' 1;
-}
-
-body.clock-dim #time-display {
-  font-size: calc(clamp(88px, 15vw, 180px) * var(--clock-scale) * 1.12);
-}
-
-#time-display.tick { animation: tickAnim 0.28s cubic-bezier(0.22,1,0.36,1); }
-#time-display.running { color: var(--accent) !important; }
-#time-display.warning { color: var(--danger) !important; }
-
-@keyframes tickAnim {
-  0%   { transform: scale(0.996) translateY(3px); filter: blur(1.5px); }
-  60%  { transform: scale(1.001) translateY(-1px); filter: blur(0); }
-  100% { transform: scale(1) translateY(0); filter: blur(0); }
-}
-
-@keyframes colonPulse {
-  0%   { opacity: 1; transform: scaleY(1); }
-  40%  { opacity: 0.18; transform: scaleY(0.7); }
-  100% { opacity: 1; transform: scaleY(1); }
-}
-
-.time-colon {
-  display: inline-block; animation: colonBlink 1s step-end infinite; opacity: 1;
-}
-body.timer-running .time-colon { animation: none; opacity: 1; }
-
-@keyframes colonBlink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.25; }
-}
-
-#sub-label {
-  font-family: 'SF Pro', sans-serif; font-size: 11px; letter-spacing: 0.14em; color: var(--muted); margin-top: 6px; height: 18px; text-transform: uppercase !important;
-}
-
-/* pomodoro dots */
-#pomo-dots { display: flex; gap: 8px; justify-content: center; margin-top: 10px; height: 20px; }
-.pomo-dot { width: 7px; height: 7px; border-radius: 50%; border: 1px solid rgba(232,213,176,0.35); background: transparent; transition: background 0.4s, transform 0.3s; }
-.pomo-dot.done { background: var(--accent); border-color: var(--accent); transform: scale(1.2); }
-
-/* controls */
-#controls { display: flex; gap: 10px; justify-content: center; margin-top: 16px; min-height: 44px; align-items: center; transition: opacity 0.4s ease, transform 0.4s ease; }
-
-.ctrl-btn {
-  backdrop-filter: blur(var(--ui-blur)) saturate(180%); -webkit-backdrop-filter: blur(var(--ui-blur)) saturate(180%);
-  background: var(--glass-bg); border-top: 1px solid var(--glass-border-t); border-left: 1px solid var(--glass-border-l); border-right: 1px solid var(--glass-border-r); border-bottom: 1px solid var(--glass-border-b);
-  box-shadow: var(--glass-shadow); color: rgba(255,255,255,0.7); font-family: 'SF Pro', sans-serif; font-size: 12px; font-weight: 400; padding: 10px 24px; border-radius: 22px; cursor: pointer; transition: all 0.2s; letter-spacing: 0.05em; text-transform: lowercase !important;
-}
-.ctrl-btn:hover { background: linear-gradient(135deg, rgba(255,255,255,0.22), rgba(255,255,255,0.10)); color: var(--text); }
-.ctrl-btn.primary {
-  background: linear-gradient(135deg, rgba(232,213,176,0.2), rgba(232,213,176,0.07));
-  border-top-color: rgba(232,213,176,0.45); border-left-color: rgba(232,213,176,0.28); border-right-color: rgba(232,213,176,0.06); border-bottom-color: rgba(232,213,176,0.06);
-  color: var(--accent); box-shadow: 0 4px 20px rgba(232,213,176,0.1), inset 0 1px 0 rgba(232,213,176,0.2);
-}
-.ctrl-btn.primary:hover { background: linear-gradient(135deg, rgba(232,213,176,0.30), rgba(232,213,176,0.12)); }
-
-/* countdown input */
-#countdown-input { display: flex; gap: 6px; align-items: center; justify-content: center; margin-top: 14px; }
-.time-input {
-  backdrop-filter: blur(var(--ui-blur)) saturate(180%); -webkit-backdrop-filter: blur(var(--ui-blur)) saturate(180%);
-  background: rgba(255,255,255,0.05); border-top: 1px solid rgba(255,255,255,0.2); border-left: 1px solid rgba(255,255,255,0.12); border-right: 1px solid rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.04);
-  border-radius: 10px; color: var(--text); font-family: 'SF Pro', 'DM Mono', monospace; font-size: 20px; font-weight: 300; text-align: center; width: 62px; padding: 8px 4px; outline: none; transition: all 0.2s;
-}
-.time-input:focus { border-top-color: rgba(232,213,176,0.5); background: rgba(232,213,176,0.06); }
-.time-sep { color: var(--muted); font-size: 22px; font-family: 'DM Mono', monospace; }
-
-/* ── RUNNING STATE — hide UI ── */
-body.timer-running #nav, body.timer-running #bottom-left, body.timer-running #btn-settings { opacity: 0; pointer-events: none; transition: opacity 0.5s ease; }
-body.timer-running #quote-box { opacity: 1 !important; pointer-events: all !important; }
-body.timer-running #controls { opacity: 0.15; transition: opacity 0.3s ease; }
-body.timer-running #controls:hover { opacity: 1; }
-body.timer-running #btn-zen { opacity: 0.15; }
-body.timer-running #btn-zen:hover { opacity: 1; }
-
-/* ── BOTTOM LEFT ── */
-#bottom-left { position: fixed; bottom: 24px; left: 24px; display: flex; gap: 8px; align-items: flex-end; z-index: 10; pointer-events: all; transition: opacity 0.5s ease; }
-
-.tool-btn {
-  width: 44px; height: 44px; border-radius: 50%;
-  backdrop-filter: blur(var(--ui-blur)) saturate(180%); -webkit-backdrop-filter: blur(var(--ui-blur)) saturate(180%);
-  background: var(--glass-bg); border-top: 1px solid var(--glass-border-t); border-left: 1px solid var(--glass-border-l); border-right: 1px solid var(--glass-border-r); border-bottom: 1px solid var(--glass-border-b);
-  box-shadow: var(--glass-shadow); color: var(--muted); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;
-}
-.tool-btn svg { width: 18px; height: 18px; transition: all 0.2s; }
-.tool-btn:hover { background: linear-gradient(135deg, rgba(255,255,255,0.22),rgba(255,255,255,0.10)); color: var(--text); }
-.tool-btn:hover svg { transform: scale(1.1); }
-.tool-btn.active { 
-  background: linear-gradient(135deg, rgba(168,196,184,0.2), rgba(168,196,184,0.07));
-  border-top-color: rgba(168,196,184,0.42); border-left-color: rgba(168,196,184,0.25); color: var(--accent2); 
-  box-shadow: 0 4px 20px rgba(168,196,184,0.12), inset 0 1px 0 rgba(168,196,184,0.2);
-}
-
-/* ── BOTTOM RIGHT ── */
-#bottom-right { position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 8px; z-index: 10; pointer-events: all; }
-
-/* ── PANELS ── */
-.panel {
-  position: fixed;
-  backdrop-filter: blur(calc(var(--ui-blur) * 1.5)) saturate(200%); -webkit-backdrop-filter: blur(calc(var(--ui-blur) * 1.5)) saturate(200%);
-  background: rgba(8,8,10,0.82); border-top: 1px solid rgba(255,255,255,0.16); border-left: 1px solid rgba(255,255,255,0.10); border-right: 1px solid rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.04);
-  box-shadow: 0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08); border-radius: 18px; padding: 20px; z-index: 20; display: none; pointer-events: all; transition: opacity 0.2s;
-}
-.panel.open { display: block; animation: panelIn 0.2s cubic-bezier(0.34,1.3,0.64,1); }
-
-@keyframes panelIn { from { opacity: 0; transform: translateY(8px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
-
-.panel-title { font-family: 'SF Pro', sans-serif; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase !important; color: var(--muted); margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
-.panel-close {
-  width: 26px; height: 26px; border-radius: 50%;
-  backdrop-filter: blur(var(--ui-blur)) saturate(180%); -webkit-backdrop-filter: blur(var(--ui-blur)) saturate(180%);
-  background: var(--glass-bg); border-top: 1px solid var(--glass-border-t); border-left: 1px solid var(--glass-border-l); border-right: 1px solid var(--glass-border-r); border-bottom: 1px solid var(--glass-border-b);
-  box-shadow: var(--glass-shadow); color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; transition: all 0.2s; flex-shrink: 0;
-}
-.panel-close:hover { background: linear-gradient(135deg,rgba(255,255,255,0.2),rgba(255,255,255,0.08)); color: var(--text); }
-
-.export-btn { border-radius: 8px; width: auto; padding: 0 10px; background: linear-gradient(135deg, rgba(168,196,184,0.15), rgba(168,196,184,0.05)); border-top-color: rgba(168,196,184,0.35); border-left-color: rgba(168,196,184,0.2); border-right-color: rgba(168,196,184,0.05); border-bottom-color: rgba(168,196,184,0.05); color: var(--accent2); font-size: 11px; }
-.export-btn:hover { background: linear-gradient(135deg, rgba(168,196,184,0.25), rgba(168,196,184,0.1)); }
-
-#bg-panel { bottom: 80px; left: 24px; width: 280px; }
-#drop-zone { border: 1.5px dashed rgba(255,255,255,0.14); border-radius: 12px; padding: 18px; text-align: center; color: var(--muted); font-size: 12px; cursor: pointer; transition: all 0.2s; line-height: 1.7; }
-#drop-zone:hover, #drop-zone.dragover { border-color: rgba(168,196,184,0.4); background: rgba(168,196,184,0.05); color: var(--accent2); }
-.panel-input { width: 100%; backdrop-filter: blur(var(--ui-blur)) saturate(180%); -webkit-backdrop-filter: blur(var(--ui-blur)) saturate(180%); background: rgba(255,255,255,0.05); border-top: 1px solid rgba(255,255,255,0.18); border-left: 1px solid rgba(255,255,255,0.12); border-right: 1px solid rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.04); border-radius: 10px; color: var(--text); font-family: 'SF Pro', sans-serif; font-size: 13px; padding: 9px 12px; outline: none; margin-top: 10px; transition: all 0.2s; }
-.panel-input:focus { border-top-color: rgba(168,196,184,0.5); background: rgba(168,196,184,0.05); }
-.panel-input::placeholder { color: var(--muted); }
-.small-btn { backdrop-filter: blur(var(--ui-blur)) saturate(180%); -webkit-backdrop-filter: blur(var(--ui-blur)) saturate(180%); background: var(--glass-bg); border-top: 1px solid var(--glass-border-t); border-left: 1px solid var(--glass-border-l); border-right: 1px solid var(--glass-border-r); border-bottom: 1px solid var(--glass-border-b); box-shadow: var(--glass-shadow); color: var(--muted); font-family: 'SF Pro', sans-serif; font-size: 12px; padding: 7px 14px; border-radius: 8px; cursor: pointer; transition: all 0.2s; margin-top: 8px; width: 100%; text-align: center; letter-spacing: 0.04em; }
-.small-btn:hover { background: linear-gradient(135deg,rgba(255,255,255,0.2),rgba(255,255,255,0.08)); color: var(--text); }
-
-#music-panel { bottom: 80px; left: 24px; width: 300px; }
-#yt-frame-wrap { border-radius: 10px; overflow: hidden; background: #000; display: none; }
-#yt-frame-wrap.visible { display: block; }
-#yt-frame-wrap iframe { width: 100%; height: 155px; border: none; display: block; }
-
-#notes-panel { bottom: 80px; left: 24px; width: 320px; max-height: 420px; display: none; flex-direction: column; }
-#notes-panel.open { display: flex; }
-#notes-area { text-transform: none !important; flex: 1; background: transparent; border: none; color: var(--text); font-family: 'SF Pro', sans-serif; font-size: 15px; font-weight: 300; line-height: 1.75; resize: none; outline: none; min-height: 200px; max-height: 320px; overflow-y: auto; }
-#notes-area::placeholder { color: rgba(255,255,255,0.18); }
-#notes-area::-webkit-scrollbar { width: 3px; }
-#notes-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-.notes-meta { font-size: 10px; color: rgba(255,255,255,0.2); text-align: right; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); }
-
-/* ── STATS PANEL ── */
-#stats-panel { bottom: 80px; left: 24px; width: 320px; max-height: 70vh; display: none; flex-direction: column; }
-#stats-panel.open { display: flex; }
-.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.stats-card {
-  padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.06);
-}
-.stats-label { font-size: 10px; letter-spacing: 0.08em; color: rgba(255,255,255,0.35); text-transform: uppercase !important; }
-.stats-value { margin-top: 8px; font-family: 'DM Mono', monospace; font-size: 22px; color: var(--text); }
-.stats-goal-block, .stats-last-block {
-  margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06);
-}
-.stats-progress {
-  margin-top: 10px; width: 100%; height: 8px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,0.07);
-}
-.stats-progress-bar {
-  width: 0; height: 100%; border-radius: inherit;
-  background: linear-gradient(90deg, rgba(232,213,176,0.95), rgba(168,196,184,0.92));
-  box-shadow: 0 0 18px rgba(232,213,176,0.22);
-  transition: width 0.35s ease;
-}
-.stats-goal-copy {
-  margin-top: 8px; font-size: 11px; line-height: 1.65; color: rgba(255,255,255,0.42);
-}
-.stats-last-copy {
-  margin-top: 8px; font-size: 12px; line-height: 1.65; color: rgba(255,255,255,0.56);
-}
-#sound-volume-row.disabled { opacity: 0.38; pointer-events: none; }
-
-/* ── SETTINGS PANEL - NEW 2 COLUMN LAYOUT ── */
-#settings-panel { bottom: 80px; right: 24px; width: 480px; max-width: 90vw; padding: 16px; }
-.settings-layout { display: flex; gap: 16px; height: 380px; }
-.settings-sidebar { width: 140px; display: flex; flex-direction: column; gap: 6px; border-right: 1px solid var(--border); padding-right: 12px; }
-.settings-content { flex: 1; overflow-y: auto; padding-right: 8px; }
-.settings-content::-webkit-scrollbar { width: 3px; }
-.settings-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-
-.settings-tab-btn {
-  background: transparent; border: none; color: var(--muted); font-family: 'SF Pro', sans-serif; font-size: 12px; text-align: left; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s;
-}
-.settings-tab-btn:hover { background: rgba(255,255,255,0.05); color: var(--text); }
-.settings-tab-btn.active { background: rgba(255,255,255,0.1); color: var(--text); }
-.settings-pane { display: none; animation: paneFade 0.2s ease; }
-.settings-pane.active { display: block; }
-
-@keyframes paneFade { from { opacity: 0; transform: translateX(5px); } to { opacity: 1; transform: translateX(0); } }
-
-.setting-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.setting-label { font-family: 'SF Pro', sans-serif; font-size: 13px; color: rgba(255,255,255,0.7); }
-.setting-sublabel { font-size: 10px; color: var(--muted); margin-top: 3px; letter-spacing: 0.05em; }
-.slider-wrap { display: flex; align-items: center; gap: 10px; }
-input[type=range] { width: 90px; height: 3px; background: rgba(255,255,255,0.12); border-radius: 2px; outline: none; cursor: pointer; }
-input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); cursor: pointer; box-shadow: 0 2px 8px rgba(232,213,176,0.3); }
-.slider-val { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); min-width: 32px; text-align: right; }
-.setting-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 10px 0 16px; }
-.setting-section-title { font-family: 'SF Pro', sans-serif; font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase !important; color: rgba(255,255,255,0.25); margin-bottom: 14px; }
-
-/* Toggle switch */
-.toggle-wrap { display: flex; align-items: center; gap: 10px; }
-.toggle { position: relative; width: 36px; height: 20px; cursor: pointer; flex-shrink: 0; }
-.toggle input { display: none; }
-.toggle-track { position: absolute; inset: 0; border-radius: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); transition: all 0.25s; }
-.toggle input:checked + .toggle-track { background: rgba(168,196,184,0.3); border-color: rgba(168,196,184,0.5); }
-.toggle-thumb { position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: rgba(255,255,255,0.6); box-shadow: 0 1px 4px rgba(0,0,0,0.3); transition: transform 0.25s, background 0.25s; }
-.toggle input:checked ~ .toggle-thumb { transform: translateX(16px); background: var(--accent2); }
-
-/* Custom Color Input */
-input[type="color"] { -webkit-appearance: none; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; padding: 0; background: transparent; overflow: hidden; }
-input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
-input[type="color"]::-webkit-color-swatch { border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; }
-
-#yt-bg-section { margin-top: 10px; }
-#yt-bg-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: var(--text); padding: 8px 12px; outline: none; margin-top: 8px; font-size: 12px; }
-
-/* ── FLOATING PLAYER ── */
-#floating-player {
-  position: fixed; bottom: 84px; left: 24px; width: 280px; height: 160px; border-radius: 16px; overflow: hidden; z-index: 25; display: none; cursor: move; box-shadow: 0 12px 50px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.4); border-top: 1px solid rgba(255,255,255,0.2); border-left: 1px solid rgba(255,255,255,0.12); animation: floatIn 0.3s cubic-bezier(0.34,1.4,0.64,1);
-}
-#floating-player.show { display: block; }
-@keyframes floatIn { from { opacity: 0; transform: translateY(12px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
-#fp-bg { position: absolute; inset: 0; background: #080808; background-size: cover; background-position: center; z-index: 0; }
-#fp-bg::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,var(--focus-dim)); transition: background 1.2s ease; }
-#floating-player.focused #fp-bg { filter: blur(var(--focus-blur)); transition: filter 1.2s ease; }
-#fp-content { position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-#fp-time { font-family: 'SF Pro', 'DM Mono', monospace; font-variation-settings: 'wdth' 130; font-size: 42px; font-weight: 200; letter-spacing: -0.02em; color: var(--text); font-feature-settings: 'tnum'; line-height: 1; }
-#fp-mode { font-family: 'SF Pro', sans-serif; font-size: 9px; letter-spacing: 0.18em; color: rgba(255,255,255,0.4); text-transform: uppercase !important; margin-top: 8px; }
-#fp-close { position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,0.4); color: rgba(255,255,255,0.6); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 2; transition: all 0.2s; }
-#fp-close:hover { background: rgba(255,255,255,0.2); color: var(--text); }
-
-/* ── BREAK BADGE ── */
-#break-badge {
-  display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) translateY(90px); backdrop-filter: blur(12px); background: linear-gradient(135deg, rgba(168,196,184,0.15), rgba(168,196,184,0.06)); border-top: 1px solid rgba(168,196,184,0.35); border-left: 1px solid rgba(168,196,184,0.22); border-right: 1px solid rgba(168,196,184,0.06); border-bottom: 1px solid rgba(168,196,184,0.06); color: var(--accent2); font-family: 'SF Pro', sans-serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase !important; padding: 6px 16px; border-radius: 20px; z-index: 5; pointer-events: none;
-}
-
-/* ── NOTIFICATION ── */
-#notification { background-color: rgba(0,0,0,0.5); position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; visibility: hidden; pointer-events: none; backdrop-filter: blur(10px); transition: opacity 0.4s ease, visibility 0.4s ease; }
-#notification::before { content: ''; position: absolute; inset: 0; background: inherit; background-image: var(--notif-bg-img, none); background-size: cover; background-position: center; filter: blur(20px) brightness(0.45); transform: scale(1.08); z-index: 0; }
-#notification::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,0.38); z-index: 0; }
-#notification.show { opacity: 1; visibility: visible; pointer-events: all; }
-.notif-card { position: relative; z-index: 1; backdrop-filter: blur(32px) saturate(220%); background: linear-gradient(145deg, rgba(20,20,24,0.82), rgba(10,10,12,0.88)); border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 24px 70px rgba(0,0,0,0.55); border-radius: 24px; padding: 36px 44px; text-align: center; max-width: 360px; width: calc(100vw - 48px); transform: scale(0.85); transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1); }
-#notification.show .notif-card { transform: scale(1); }
-.notif-icon { font-size: 40px; margin-bottom: 14px; }
-.notif-title { font-family: 'Prata', serif; font-size: 24px; color: var(--accent); margin-bottom: 10px; }
-.notif-msg { font-family: 'SF Pro', sans-serif; font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.75; margin-bottom: 24px; white-space: pre-line; }
-#notif-dismiss { background: linear-gradient(135deg, rgba(232,213,176,0.2), rgba(232,213,176,0.07)); border: 1px solid rgba(232,213,176,0.3); color: var(--accent); font-family: 'SF Pro', sans-serif; font-size: 12px; padding: 10px 28px; border-radius: 22px; cursor: pointer; transition: all 0.2s; letter-spacing: 0.06em; }
-#notif-dismiss:hover { background: linear-gradient(135deg,rgba(232,213,176,0.3),rgba(232,213,176,0.12)); }
-
-/* ── CLOCK DIM MODE ── */
-body.clock-dim #bg-layer, body.clock-dim #bg-new { filter: blur(var(--focus-blur)); transform: scale(1.1) !important; }
-body.clock-dim #bg-layer::after, body.clock-dim #bg-new::after, body.clock-dim #yt-bg-wrap::after { background: rgba(0,0,0,var(--focus-dim)); }
-body.clock-dim #nav, body.clock-dim #bottom-left, body.clock-dim #btn-settings, body.clock-dim #btn-zen { opacity: 0 !important; pointer-events: none !important; transition: opacity 0.6s ease; }
-body.clock-dim #quote-box { opacity: 1 !important; pointer-events: all !important; }
-#btn-dim.active { background: linear-gradient(135deg, rgba(232,213,176,0.2), rgba(232,213,176,0.07)); border-color: rgba(232,213,176,0.3); color: var(--accent); }
-
-/* ── TOUCH / TAP MODE ── */
-body.touch-mode #controls { display: none !important; }
-body.touch-mode #countdown-input { opacity: 0.7; }
-body.touch-mode #btn-dim { display: none !important; }
-body.touch-mode #clock-display { cursor: pointer; }
-body.clock-dim.touch-mode #clock-display { pointer-events: none; } 
-@keyframes tapPulse { 0% { opacity: 0; transform: scale(0.94); } 35% { opacity: 0.22; } 100% { opacity: 0; transform: scale(1.06); } }
-#tap-ring { position: fixed; inset: 0; pointer-events: none; z-index: 2; display: none; }
-#tap-ring.pulse { display: block; animation: tapPulse 0.38s cubic-bezier(0.22,1,0.36,1) forwards; background: radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.1) 0%, transparent 65%); }
-#touch-hint { font-size: 10px; letter-spacing: 0.18em; color: rgba(255,255,255,0.2); text-transform: uppercase; text-align: center; margin-top: 18px; display: none; pointer-events: none; font-family: 'SF Pro', sans-serif; transition: opacity 0.5s; }
-body.touch-mode #touch-hint { display: block; }
-
-/* ── FONT SELECTOR (2x2 Grid) ── */
-.font-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px; }
-.font-opt { background: var(--glass-bg); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 7px 6px; color: var(--muted); font-size: 11px; cursor: pointer; text-align: center; transition: all 0.2s; letter-spacing: 0.04em; }
-.font-opt:hover { background: rgba(255,255,255,0.1); color: var(--text); }
-.font-opt.active { background: rgba(232,213,176,0.15); color: var(--accent); border-color: rgba(232,213,176,0.3); }
-
-/* ── TODO NAV BTN ── */
-.todo-nav-btn { display: flex; align-items: center; font-size: 11px !important; letter-spacing: 0.06em !important; text-transform: none !important; max-width: 220px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-
-/* ── TODO PANEL ── */
-#todo-panel { position: fixed; top: auto; bottom: auto; left: 24px; width: 340px; max-height: 60vh; display: none; flex-direction: column; overflow: hidden; }
-#todo-panel.open { display: flex; }
-.todo-input-wrap { display: flex; gap: 6px; margin-bottom: 12px; }
-.todo-input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: var(--text); font-family: 'SF Pro', sans-serif; font-size: 13px; padding: 8px 12px; outline: none; transition: all 0.2s; }
-.todo-input:focus { border-top-color: rgba(232,213,176,0.5); background: rgba(232,213,176,0.05); }
-.todo-input::placeholder { color: var(--muted); }
-.todo-add-btn { width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; background: rgba(232,213,176,0.15); border: 1px solid rgba(232,213,176,0.3); color: var(--accent); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 300; transition: all 0.2s; }
-.todo-add-btn:hover { background: rgba(232,213,176,0.25); }
-
-#todo-list { flex: 1; overflow-y: auto; max-height: 280px; display: flex; flex-direction: column; gap: 6px; }
-#todo-list::-webkit-scrollbar { width: 3px; }
-#todo-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-#todo-list:empty::after { content: attr(data-empty); color: rgba(255,255,255,0.18); font-size: 12px; text-align: center; padding: 20px 0; display: block; font-family: 'SF Pro', sans-serif; letter-spacing: 0.04em; }
-
-.todo-item { display: flex; align-items: flex-start; gap: 10px; padding: 9px 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); transition: all 0.2s; cursor: pointer; animation: todoSlideIn 0.2s cubic-bezier(0.34,1.3,0.64,1); }
-@keyframes todoSlideIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
-.todo-item:hover { background: rgba(255,255,255,0.06); }
-.todo-item.done { opacity: 0.5; }
-
-.todo-check { width: 18px; height: 18px; flex-shrink: 0; border-radius: 50%; border: 1.5px solid rgba(232,213,176,0.35); background: transparent; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
-.todo-check:hover { border-color: rgba(232,213,176,0.7); }
-.todo-item.done .todo-check { background: rgba(168,196,184,0.25); border-color: rgba(168,196,184,0.6); }
-.todo-check-icon { display: none; }
-.todo-item.done .todo-check-icon { display: block; }
-
-.todo-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-.todo-text { font-family: 'SF Pro', sans-serif; font-size: 13px; font-weight: 300; color: var(--text); line-height: 1.4; transition: opacity 0.2s; }
-.todo-item.done .todo-text { text-decoration: line-through; }
-.todo-timestamps { font-size: 9px; color: rgba(255,255,255,0.3); font-family: 'DM Mono', monospace; }
-
-.todo-del { width: 22px; height: 22px; flex-shrink: 0; border-radius: 50%; background: transparent; border: none; color: rgba(255,255,255,0.2); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; transition: all 0.2s; opacity: 0; }
-.todo-item:hover .todo-del { opacity: 1; }
-.todo-del:hover { color: var(--danger); background: rgba(201,123,110,0.12); }
-
-.todo-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); }
-.todo-count { font-size: 10px; color: rgba(255,255,255,0.25); letter-spacing: 0.08em; font-family: 'SF Pro', sans-serif; }
-.todo-clear-done { font-size: 10px; color: rgba(255,255,255,0.2); cursor: pointer; letter-spacing: 0.06em; font-family: 'SF Pro', sans-serif; transition: color 0.2s; background: none; border: none; padding: 2px 4px; }
-.todo-clear-done:hover { color: var(--danger); }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
-
-#file-input { display: none; }
-
-/* ── BUTTON INTERACTION EFFECTS ── */
-.ctrl-btn, .nav-btn, .tool-btn, .small-btn, #notif-dismiss, .panel-close, .music-tab, .font-opt, .todo-add-btn, .settings-tab-btn {
-  position: relative; overflow: hidden; transform: scale(1); transition: all 0.18s cubic-bezier(0.34,1.4,0.64,1), transform 0.12s cubic-bezier(0.34,1.4,0.64,1); user-select: none; -webkit-tap-highlight-color: transparent;
-}
-.ctrl-btn:active, .nav-btn:active, .tool-btn:active, .small-btn:active, #notif-dismiss:active, .panel-close:active, .music-tab:active, .font-opt:active, .todo-add-btn:active, .settings-tab-btn:active {
-  transform: scale(0.93) !important; filter: brightness(0.88); transition: transform 0.07s ease, filter 0.07s ease !important;
-}
-.ripple { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.22); transform: scale(0); animation: rippleAnim 0.5s cubic-bezier(0.4,0,0.2,1) forwards; pointer-events: none; }
-@keyframes rippleAnim { to { transform: scale(4); opacity: 0; } }
-
-/* music tab style */
-.music-tab { flex: 1; background: var(--glass-bg); border: 1px solid rgba(255,255,255,0.1); color: var(--muted); font-family: 'SF Pro', sans-serif; font-size: 11px; letter-spacing: 0.08em; padding: 7px 10px; border-radius: 12px; cursor: pointer; transition: all 0.2s; }
-.music-tab.active { background: rgba(168,196,184,0.15); border-color: rgba(168,196,184,0.3); color: var(--accent2); }
-
-/* ── MOBILE RESPONSIVE ── */
-@media (max-width: 600px) {
-  .intro-counter-wrap {
-    left: 18px;
-    right: 18px;
-    bottom: 32px;
-  }
-  .intro-progress {
-    left: 18px;
-    right: 18px;
-    bottom: 18px;
-  }
-  #nav { top: 16px; left: 16px; gap: 6px; }
-  #nav-row1 { flex-wrap: wrap; gap: 5px; }
-  .nav-logo { width: 26px; height: 26px; }
-  .nav-btn { font-size: 10px; padding: 6px 11px; }
-  #nav-countdown { padding: 4px 10px 4px 8px; }
-  .ncd-label { display: none; }
-  #ncd-time { font-size: 11px; }
-
-  #quote-box { display: none; }
-
-  #time-display { font-size: calc(clamp(66px, 18vw, 110px) * var(--clock-scale)); letter-spacing: -0.03em; }
-  body.clock-dim #time-display { font-size: calc(clamp(66px, 18vw, 110px) * var(--clock-scale) * 1.12); }
-
-  #bottom-left { bottom: 16px; left: 16px; gap: 7px; }
-  #bottom-right { bottom: 16px; right: 16px; }
-  .tool-btn { width: 46px; height: 46px; border-radius: 14px; }
-
-  .panel { max-width: calc(100vw - 32px) !important; width: calc(100vw - 32px) !important; left: 16px !important; right: 16px !important; }
-  
-  /* Cài đặt Responsive */
-  #settings-panel { right: 16px; left: 16px; width: auto; bottom: 78px; padding: 12px; }
-  .settings-layout { flex-direction: column; height: auto; max-height: 65vh; gap: 10px; }
-  .settings-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); padding-bottom: 8px; padding-right: 0; flex-direction: row; overflow-x: auto; }
-  .settings-tab-btn { white-space: nowrap; }
-
-  #bg-panel, #music-panel, #notes-panel, #todo-panel, #stats-panel { bottom: 78px; }
-
-  #floating-player { width: 240px; height: 136px; }
-  #fp-time { font-size: 34px; }
-
-  .ctrl-btn { font-size: 11px; padding: 9px 18px; }
-  .time-input { width: 52px; font-size: 17px; }
-}
-@media (max-width: 400px) {
-  .nav-btn { display: none; }
-  #nav-row1 .nav-btn:first-of-type { display: flex; } 
-}
-
-/* Hide scrollbar but keep functionality */
-.panel { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.08) transparent; }
-</style>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body class="intro-active">
 
 <div id="intro-screen" aria-hidden="true">
-  <div class="intro-counter-wrap">
-    <div id="intro-counter">00</div>
-  </div>
-  <div class="intro-progress">
-    <div id="intro-progress-bar"></div>
-  </div>
+  <div class="intro-counter-wrap"><div id="intro-counter">00</div></div>
+  <div class="intro-progress"><div id="intro-progress-bar"></div></div>
   <div class="intro-shutter intro-shutter-top"></div>
   <div class="intro-shutter intro-shutter-bottom"></div>
 </div>
 
-<!-- Background -->
-<div id="bg-layer">
-  <div class="bg-img"></div>
-</div>
+<div id="bg-layer"><div class="bg-img"></div></div>
 <div id="bg-new"></div>
+<div id="bg-video-wrap"><video id="bg-video" muted loop playsinline></video></div>
+<div id="yt-bg-wrap"><iframe id="yt-bg-iframe" allow="autoplay; encrypted-media" allowfullscreen></iframe></div>
 
-<!-- YouTube Background -->
-<div id="yt-bg-wrap">
-  <iframe id="yt-bg-iframe" 
-    allow="autoplay; encrypted-media"
-    allowfullscreen>
-  </iframe>
-</div>
-
-<!-- Nav -->
 <nav id="nav">
-  <div id="nav-row1">
-    <button class="nav-btn active" onclick="switchMode('clock')" data-i18n="navClock">Giờ hiện tại</button>
-    <button class="nav-btn" onclick="switchMode('countdown')" data-i18n="navCountdown">Đếm ngược</button>
-    <button class="nav-btn" onclick="switchMode('pomodoro')" data-i18n="navPomo">Pomodoro</button>
+  <div id="nav-mode-wrap">
+    <button class="nav-btn active" id="btn-mode-current">
+      <span id="mode-btn-label">Giờ hiện tại</span>
+      <svg class="mode-chevron" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l4 4 4-4"/></svg>
+    </button>
+    <div id="mode-dropdown">
+      <button class="nav-btn mode-opt" id="mode-opt-clock" onclick="selectModeOpt('clock')" data-i18n="navClock">Giờ hiện tại</button>
+      <button class="nav-btn mode-opt" id="mode-opt-countdown" onclick="selectModeOpt('countdown')" data-i18n="navCountdown">Đếm ngược</button>
+      <button class="nav-btn mode-opt" id="mode-opt-pomodoro" onclick="selectModeOpt('pomodoro')" data-i18n="navPomo">Pomodoro</button>
+    </div>
   </div>
 
-  <!-- Countdown to target date -->
-  <div id="nav-countdown">
-    <svg class="ncd-icon" viewBox="0 0 24 24" fill="none" stroke="rgba(168,196,184,0.7)" stroke-width="1.5" stroke-linecap="round">
-      <path d="M5 3h14M5 21h14M7 3v4l5 5-5 5v4M17 3v4l-5 5 5 5v4"/>
+  <div id="nav-countdown" title="Nhấn để chọn ngày đích" onclick="toggleCalendarPanel()">
+    <svg class="ncd-icon" viewBox="0 0 24 24" fill="none" stroke="rgba(168,196,184,0.8)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
     </svg>
-    <span class="ncd-label" data-i18n="ncdLeft">Chỉ còn</span>
-    <span id="ncd-time">--n --:--:--</span>
-    <span class="ncd-label" data-i18n="ncdTarget">Là thi THPTQG</span>
+    <div class="ncd-text-group">
+      <div class="ncd-prefix-wrap"><span class="ncd-label ncd-prefix" data-i18n="ncdLeft">Chỉ còn</span></div>
+      <span id="ncd-time">--n --:--:--</span>
+      <div class="ncd-suffix-wrap"><span class="ncd-label ncd-suffix" id="ncd-target-label" data-i18n="ncdTarget">Là thi THPTQG</span></div>
+    </div>
   </div>
-
-  <!-- To-do button -->
-  <button class="nav-btn todo-nav-btn" id="btn-todo" onclick="togglePanel('todo-panel', this)">
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;flex-shrink:0;vertical-align:middle">
-      <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
-    </svg>
-    <span id="todo-btn-text">Bạn còn điều gì để làm không?</span>
-  </button>
 </nav>
 
-<!-- Quotes -->
 <div id="quote-box">
-  <div class="quote-topline">
-    <div class="quote-tag" id="quote-tag" data-i18n="quoteTag">Mindset</div>
-  </div>
+  <div class="quote-topline"><div class="quote-tag" id="quote-tag" data-i18n="quoteTag">Mindset</div></div>
   <div id="quote-content">
-    <span class="quote-main" id="quote-main"></span>
-    <span class="quote-divider" aria-hidden="true">·</span>
-    <span class="quote-note" id="quote-note"></span>
+    <span class="quote-main" id="quote-main"></span><span class="quote-divider" aria-hidden="true">·</span><span class="quote-note" id="quote-note"></span>
   </div>
   <div id="quote-author"></div>
 </div>
 
-<!-- Center Clock -->
 <div id="app">
   <div id="clock-display">
     <div id="mode-label"></div>
@@ -935,76 +77,49 @@ body.touch-mode #touch-hint { display: block; }
       <input type="number" class="time-input" id="input-s" min="0" max="59" value="0" placeholder="00">
     </div>
     <div id="controls"></div>
-    <div id="touch-hint">chạm = bắt đầu/dừng · chạm×2 = đặt lại</div>
+    <div id="touch-hint" data-i18n="touchHintStr">chạm = bắt đầu/dừng · chạm×2 = đặt lại</div>
   </div>
 </div>
 <div id="tap-ring"></div>
-
 <div id="break-badge" data-i18n="breakBadge">Giải lao</div>
 
-<!-- Bottom Left Tools -->
 <div id="bottom-left">
-  <!-- Floating Player Button -->
-  <div class="tool-btn" id="btn-pip" onclick="toggleFloatingPlayer()" data-i18n-title="toolPip" title="Cửa sổ nổi">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="2" y="3" width="20" height="14" rx="2.5"/>
-      <rect x="12" y="10" width="8" height="6" rx="1.5" fill="currentColor" opacity="0.5"/>
-    </svg>
+  <div class="tool-btn" id="btn-todo" onclick="togglePanel('todo-panel', this)" data-i18n-title="panelTodo" title="Việc cần làm" style="padding: 6px 16px; border-radius: 22px; width: auto; gap: 8px;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    <div class="todo-text-wrap" style="display:flex; flex-direction:column; align-items:flex-start; line-height: 1.2;">
+      <span id="todo-btn-text" style="font-family: 'SF Pro', sans-serif; font-size: 11.5px; white-space: nowrap; color: var(--text);">Bạn có việc gì cần làm không?</span>
+      <span id="todo-greeting" style="font-family: 'SF Pro', sans-serif; font-size: 9px; color: var(--muted); letter-spacing: 0.04em;">Chào buổi sáng!</span>
+    </div>
   </div>
-  <div class="tool-btn" id="btn-bg" onclick="togglePanel('bg-panel', this)" data-i18n-title="toolBg" title="Hình nền">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="3" y="3" width="18" height="18" rx="3"/>
-      <circle cx="8.5" cy="8.5" r="1.5"/>
-      <path d="M21 15l-5-5L5 21"/>
-    </svg>
-  </div>
-  <div class="tool-btn" id="btn-music" onclick="togglePanel('music-panel', this)" data-i18n-title="toolMusic" title="Nhạc YouTube">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="8" cy="18" r="3"/>
-      <circle cx="19" cy="15" r="3"/>
-      <path d="M11 18V6l11-3v9"/>
-    </svg>
-  </div>
-  <div class="tool-btn" id="btn-notes" onclick="togglePanel('notes-panel', this)" data-i18n-title="toolNotes" title="Ghi chú">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-      <path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/>
-    </svg>
-  </div>
-  <div class="tool-btn" id="btn-stats" onclick="togglePanel('stats-panel', this)" data-i18n-title="toolStats" title="Tiến độ hôm nay">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M4 20V10"/>
-      <path d="M10 20V4"/>
-      <path d="M16 20v-7"/>
-      <path d="M22 20v-12"/>
-    </svg>
+  <div id="media-fan-wrap">
+    <div class="tool-btn" id="btn-media" onclick="toggleMediaFan()" data-i18n-title="toolTools" title="Công cụ">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></svg>
+    </div>
+    <div class="tool-btn fan-item" id="fan-music" style="opacity:0;pointer-events:none" data-i18n-title="panelMusic" title="Nhạc nền">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="18" r="3"/><circle cx="19" cy="15" r="3"/><path d="M11 18V6l11-3v9"/></svg>
+    </div>
+    <div class="tool-btn fan-item" id="fan-notes" style="opacity:0;pointer-events:none" data-i18n-title="panelNotes" title="Ghi chú">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg>
+    </div>
+    <div class="tool-btn fan-item" id="btn-pip" onclick="toggleFloatingPlayer()" data-i18n-title="toolPip" title="Cửa sổ nổi" style="opacity:0;pointer-events:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2.5"/><rect x="12" y="10" width="8" height="6" rx="1.5" fill="currentColor" opacity="0.5"/></svg>
+    </div>
   </div>
 </div>
 
-<!-- Bottom Right -->
 <div id="bottom-right">
-  <div class="tool-btn" id="btn-dim" onclick="toggleClockDim()" data-i18n-title="toolDim" title="Tối mờ" style="display:none;">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/>
-    </svg>
+  <div class="tool-btn" id="btn-zen" onclick="toggleZen()" data-i18n-title="toolFullscreen" title="Toàn màn hình">
+    <svg id="zen-icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 00-2 2v3M21 8V5a2 2 0 00-2-2h-3M3 16v3a2 2 0 002 2h3M16 21h3a2 2 0 002-2v-3"/></svg>
+    <svg id="zen-icon-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M8 3v3a2 2 0 01-2 2H3M21 8h-3a2 2 0 01-2-2V3M3 16h3a2 2 0 012 2v3M16 21v-3a2 2 0 012-2h3"/></svg>
   </div>
   <div class="tool-btn" id="btn-settings" onclick="togglePanel('settings-panel', this)" data-i18n-title="toolSettings" title="Cài đặt">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="3"/>
-      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
-    </svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
   </div>
-  <div class="tool-btn" id="btn-zen" onclick="toggleZen()" data-i18n-title="toolFullscreen" title="Toàn màn hình">
-    <svg id="zen-icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M8 3H5a2 2 0 00-2 2v3M21 8V5a2 2 0 00-2-2h-3M3 16v3a2 2 0 002 2h3M16 21h3a2 2 0 002-2v-3"/>
-    </svg>
-    <svg id="zen-icon-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:none">
-      <path d="M8 3v3a2 2 0 01-2 2H3M21 8h-3a2 2 0 01-2-2V3M3 16h3a2 2 0 012 2v3M16 21v-3a2 2 0 012-2h3"/>
-    </svg>
+  <div class="tool-btn" id="btn-dim" onclick="toggleClockDim()" data-i18n-title="toolDim" title="Tối mờ" style="display:none;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/></svg>
   </div>
 </div>
 
-<!-- Floating Player -->
 <div id="floating-player">
   <div id="fp-bg"></div>
   <div id="fp-content">
@@ -1014,66 +129,84 @@ body.touch-mode #touch-hint { display: block; }
   <div id="fp-close" onclick="toggleFloatingPlayer()" data-i18n-title="toolClosePlayer" title="Đóng cửa sổ nổi">✕</div>
 </div>
 
-<!-- TODO Panel -->
-<div style="margin-top: 24px;" class="panel" id="todo-panel">
-  <div class="panel-title">
-    <span data-i18n="panelTodo">Việc cần làm</span>
-    <button class="panel-close" onclick="closePanel('todo-panel','btn-todo')">✕</button>
+<!-- Calendar Panel -->
+<div class="panel" id="calendar-panel">
+  <div class="panel-title"><span data-i18n="calTargetLabel">Ngày đích</span><button class="panel-close" onclick="closePanel('calendar-panel','')">✕</button></div>
+  <div class="cal-header"><button class="cal-nav" id="cal-prev" onclick="calNavigate(-1)">‹</button><div class="cal-month-label" id="cal-month-label">Tháng 1 2026</div><button class="cal-nav" id="cal-next" onclick="calNavigate(1)">›</button></div>
+  <div class="cal-grid" id="cal-grid"></div>
+  <div class="cal-time-row">
+    <div class="cal-time-label" data-i18n="calTargetTime">Giờ đích</div>
+    <input type="number" class="cal-time-input" id="cal-hour" min="0" max="23" value="7" placeholder="HH"><span class="cal-time-sep">:</span><input type="number" class="cal-time-input" id="cal-minute" min="0" max="59" value="30" placeholder="MM">
   </div>
+  <div id="cal-target-name-row" style="margin-top:10px"><input type="text" class="panel-input" id="cal-target-name" placeholder="Tên sự kiện (vd: Thi THPTQG)…" data-i18n-ph="calTargetNamePh" style="margin-top:0"></div>
+  <button class="cal-save-btn" onclick="saveTargetDate()" data-i18n="calSave">Lưu ngày đích</button>
+  <div class="cal-target-info" id="cal-target-info"></div>
+</div>
+
+<!-- TODO Panel -->
+<div class="panel" id="todo-panel">
+  <div class="panel-title"><span data-i18n="panelTodo">Việc cần làm</span><button class="panel-close" onclick="closePanel('todo-panel','btn-todo')">✕</button></div>
   <div class="todo-input-wrap">
     <input type="text" class="todo-input" id="todo-input" placeholder="Bạn muốn làm gì tiếp theo?" data-i18n-ph="todoPh" onkeypress="if(event.key==='Enter') addTodo()">
     <button class="todo-add-btn" onclick="addTodo()" data-i18n-title="todoAddTitle" title="Thêm việc">+</button>
   </div>
   <div id="todo-list" data-empty="Chưa có việc gì để làm"></div>
-  <div class="todo-footer">
-    <div class="todo-count" id="todo-count">0 việc còn lại</div>
-    <button class="todo-clear-done" onclick="clearDoneTodos()" data-i18n="clearDone">Xóa việc đã xong</button>
-  </div>
-</div>
-
-<!-- BG Panel -->
-<div class="panel" id="bg-panel">
-  <div class="panel-title">
-    <span data-i18n="panelBg">Hình nền</span>
-    <button class="panel-close" onclick="closePanel('bg-panel','btn-bg')">✕</button>
-  </div>
-  <div id="drop-zone" onclick="document.getElementById('file-input').click()"
-       ondragover="event.preventDefault();this.classList.add('dragover')"
-       ondragleave="this.classList.remove('dragover')"
-      ondrop="handleDrop(event)">
-    <span data-i18n="dropZone">Kéo thả ảnh vào đây</span><br>
-    <span style="font-size:10px;opacity:0.5" data-i18n="dropZoneSub">hoặc nhấn để chọn từ máy</span>
-  </div>
-  <input type="file" id="file-input" accept="image/*" onchange="handleFileInput(event)">
-  <input type="text" class="panel-input" id="bg-url-input" placeholder="Hoặc dán link ảnh vào đây…" data-i18n-ph="bgUrlPh" onkeydown="if(event.key==='Enter')applyBgUrl()">
-  <button class="small-btn" onclick="applyBgUrl()" data-i18n="applyLink">Áp dụng link</button>
-  <button class="small-btn" onclick="clearBg()" style="margin-top:6px;opacity:0.5" data-i18n="clearBg">Xóa hình nền</button>
+  <div class="todo-footer"><div class="todo-count" id="todo-count">0 việc còn lại</div><button class="todo-clear-done" onclick="clearDoneTodos()" data-i18n="clearDone">Xóa việc đã xong</button></div>
 </div>
 
 <!-- Music Panel -->
 <div class="panel" id="music-panel">
-  <div class="panel-title">
-    <span data-i18n="panelMusic">Nhạc nền</span>
-    <button class="panel-close" onclick="closePanel('music-panel','btn-music')">✕</button>
-  </div>
-  <!-- Tab selector -->
+  <div class="panel-title"><span data-i18n="panelMusic">Nhạc nền</span><button class="panel-close" onclick="closePanel('music-panel','')">✕</button></div>
   <div id="music-tabs" style="display:flex;gap:6px;margin-bottom:12px;">
     <button class="music-tab active" onclick="switchMusicTab('yt',this)" data-i18n="tabYt">YouTube</button>
     <button class="music-tab" onclick="switchMusicTab('sc',this)" data-i18n="tabSc">SoundCloud</button>
+    <button class="music-tab" onclick="switchMusicTab('local',this)" data-i18n="tabLocal">Thư viện</button>
   </div>
-  <!-- YouTube tab -->
   <div id="music-tab-yt">
     <input type="text" class="panel-input" id="yt-url-input" style="margin-top:0" placeholder="Dán link YouTube / playlist…" data-i18n-ph="ytPh" onkeydown="if(event.key==='Enter')loadYT()">
     <button class="small-btn" onclick="loadYT()" data-i18n="playMusic">Phát nhạc</button>
   </div>
-  <!-- SoundCloud tab -->
   <div id="music-tab-sc" style="display:none;">
     <input type="text" class="panel-input" id="sc-url-input" style="margin-top:0" placeholder="Dán link SoundCloud / playlist…" data-i18n-ph="scPh" onkeydown="if(event.key==='Enter')loadSC()">
     <button class="small-btn" onclick="loadSC()" data-i18n="playMusic">Phát nhạc</button>
   </div>
-  <div id="yt-frame-wrap" style="margin-top:10px;">
-    <iframe id="yt-iframe" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+  <div id="music-tab-local" style="display:none;">
+    <div id="local-media-drop-zone" class="drop-zone-alt" onclick="document.getElementById('local-media-input').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleLocalMediaDrop(event)">
+      <span data-i18n="mediaDropZone">Kéo thả nhạc/video hoặc thư mục vào đây</span><br>
+      <span style="font-size:10px;opacity:0.5" data-i18n="mediaDropZoneSub">hỗ trợ mp3, m4a, flac, mov, mp4, webm…</span>
+    </div>
+    <div class="local-media-actions">
+      <button class="small-btn compact-btn" type="button" onclick="document.getElementById('local-media-input').click()" data-i18n="mediaAddFiles">Thêm file</button>
+      <button class="small-btn compact-btn" type="button" onclick="document.getElementById('local-media-folder-input').click()" data-i18n="mediaAddFolder">Thêm thư mục</button>
+    </div>
+    <input type="file" id="local-media-input" accept="audio/*,video/*,.mp3,.m4a,.flac,.wav,.aac,.ogg,.oga,.mov,.mp4,.webm" multiple onchange="handleLocalMediaInput(event)">
+    <input type="file" id="local-media-folder-input" accept="audio/*,video/*,.mp3,.m4a,.flac,.wav,.aac,.ogg,.oga,.mov,.mp4,.webm" multiple webkitdirectory directory onchange="handleLocalMediaInput(event)">
+
+    <div id="local-player-shell">
+      <video id="local-media-player" preload="metadata" playsinline></video>
+      <div class="local-player-header">
+        <div>
+          <div id="local-track-title">No media</div>
+          <div id="local-track-meta">00:00</div>
+        </div>
+        <button class="repeat-chip" type="button" id="local-repeat-btn" onclick="cycleLocalRepeat()">Loop: All</button>
+      </div>
+      <input type="range" id="local-seek" min="0" max="100" value="0" step="0.1" oninput="seekLocalMedia(this.value)">
+      <div class="local-time-row">
+        <span id="local-current-time">00:00</span>
+        <span id="local-total-time">00:00</span>
+      </div>
+      <div class="local-player-controls">
+        <button class="small-btn icon-btn" type="button" onclick="playPrevLocalMedia()" data-i18n-title="mediaPrev" title="Lùi bài">⏮</button>
+        <button class="small-btn icon-btn primary-ghost" type="button" id="local-play-btn" onclick="toggleLocalPlayback()" data-i18n-title="mediaPlay" title="Phát">▶</button>
+        <button class="small-btn icon-btn" type="button" onclick="playNextLocalMedia()" data-i18n-title="mediaNext" title="Bài tiếp">⏭</button>
+      </div>
+    </div>
+
+    <input type="text" class="panel-input" id="local-media-search" style="margin-top:10px" placeholder="Tìm bài trong thư viện…" data-i18n-ph="mediaSearchPh" oninput="filterLocalMedia(this.value)">
+    <div id="local-track-list" data-empty="Chưa có bài nào được thêm"></div>
   </div>
+  <div id="yt-frame-wrap" style="margin-top:10px;"><iframe id="yt-iframe" allowfullscreen allow="autoplay; encrypted-media"></iframe></div>
 </div>
 
 <!-- Notes Panel -->
@@ -1082,85 +215,55 @@ body.touch-mode #touch-hint { display: block; }
     <span data-i18n="panelNotes">Ghi chú</span>
     <div style="display:flex;gap:6px;align-items:center;">
       <button class="panel-close export-btn" onclick="exportNotes()" data-i18n-title="titleExportNotes" title="Tải về .txt" data-i18n="exportNotes">Tải về</button>
-      <button class="panel-close" onclick="closePanel('notes-panel','btn-notes')">✕</button>
+      <button class="panel-close" onclick="closePanel('notes-panel','')">✕</button>
     </div>
   </div>
   <textarea id="notes-area" placeholder="Gõ gì đó vào đây…&#10;Cứ tự nhiên như đang nghĩ thôi." data-i18n-ph="notesPh" oninput="saveNotes()"></textarea>
   <div class="notes-meta" id="notes-meta">0 từ</div>
 </div>
 
-<!-- Stats Panel -->
-<div class="panel" id="stats-panel">
-  <div class="panel-title">
-    <span data-i18n="panelStats">Tiến độ</span>
-    <button class="panel-close" onclick="closePanel('stats-panel','btn-stats')">✕</button>
-  </div>
-  <div class="stats-grid">
-    <div class="stats-card">
-      <div class="stats-label" data-i18n="statsFocus">Phút tập trung</div>
-      <div class="stats-value" id="stats-focus">0</div>
-    </div>
-    <div class="stats-card">
-      <div class="stats-label" data-i18n="statsRounds">Pomodoro xong</div>
-      <div class="stats-value" id="stats-rounds">0</div>
-    </div>
-    <div class="stats-card">
-      <div class="stats-label" data-i18n="statsCountdown">Countdown xong</div>
-      <div class="stats-value" id="stats-countdown">0</div>
-    </div>
-    <div class="stats-card">
-      <div class="stats-label" data-i18n="statsTasks">Việc hoàn tất</div>
-      <div class="stats-value" id="stats-tasks">0</div>
-    </div>
-    <div class="stats-card">
-      <div class="stats-label" data-i18n="statsStreak">Chuỗi đạt mục tiêu</div>
-      <div class="stats-value" id="stats-streak">0</div>
-    </div>
-    <div class="stats-card">
-      <div class="stats-label" data-i18n="statsGoalShort">Mục tiêu</div>
-      <div class="stats-value" id="stats-goal-short">0%</div>
-    </div>
-  </div>
-  <div class="stats-goal-block">
-    <div class="setting-row" style="margin-bottom:6px;">
-      <div>
-        <div class="setting-label" data-i18n="dailyGoal">Mục tiêu hôm nay</div>
-        <div class="setting-sublabel" data-i18n="dailyGoalSub">phút tập trung</div>
-      </div>
-      <div class="slider-wrap">
-        <input type="range" min="30" max="480" value="120" id="s-daily-goal" oninput="updateDailyGoal(this.value)" step="15">
-        <span class="slider-val" id="v-daily-goal">120 phút</span>
-      </div>
-    </div>
-    <div class="stats-progress"><div class="stats-progress-bar" id="stats-progress-bar"></div></div>
-    <div class="stats-goal-copy" id="stats-goal-note">Bắt đầu một phiên để lấp thanh tiến độ.</div>
-  </div>
-  <div class="stats-last-block">
-    <div class="stats-label" data-i18n="statsLast">Phiên gần nhất</div>
-    <div class="stats-last-copy" id="stats-last-session">Chưa có phiên nào hôm nay.</div>
-  </div>
-</div>
-
-<!-- Settings Panel (Redesigned 2 columns) -->
+<!-- Settings Panel -->
 <div class="panel" id="settings-panel">
-  <div class="panel-title">
-    <span data-i18n="panelSettings">Cài đặt</span>
-    <button class="panel-close" onclick="closePanel('settings-panel','btn-settings')">✕</button>
-  </div>
+  <div class="panel-title"><span data-i18n="panelSettings">Cài đặt</span><button class="panel-close" onclick="closePanel('settings-panel','btn-settings')">✕</button></div>
   <div class="settings-layout">
-    <!-- Cột trái: Menu Tab -->
+    <!-- Menu Tab -->
     <div class="settings-sidebar">
-      <button class="settings-tab-btn active" onclick="switchSettingsTab('tab-pomo', this)" data-i18n="tabPomo">Pomodoro</button>
+      <button class="settings-tab-btn active" onclick="switchSettingsTab('tab-stats', this)" data-i18n="panelStats">Tiến độ</button>
+      <button class="settings-tab-btn" onclick="switchSettingsTab('tab-pomo', this)" data-i18n="tabPomo">Pomodoro</button>
       <button class="settings-tab-btn" onclick="switchSettingsTab('tab-clock', this)" data-i18n="tabClock">Đồng hồ & Font</button>
       <button class="settings-tab-btn" onclick="switchSettingsTab('tab-display', this)" data-i18n="tabDisplay">Giao diện</button>
+      <button class="settings-tab-btn" onclick="switchSettingsTab('tab-bg', this)" data-i18n="panelBg">Hình nền</button>
       <button class="settings-tab-btn" onclick="switchSettingsTab('tab-system', this)" data-i18n="tabSystem">Hệ thống</button>
+      <button class="settings-tab-btn" onclick="switchSettingsTab('tab-guide', this)" data-i18n="tabGuide" style="margin-top:auto">Hướng dẫn</button>
+      <button class="settings-tab-btn" onclick="switchSettingsTab('tab-whatsnew', this)" data-i18n="tabWhatsNew">Có gì mới</button>
     </div>
     
-    <!-- Cột phải: Content -->
+    <!-- Content -->
     <div class="settings-content">
       
-      <!-- Tab Pomo -->
-      <div id="tab-pomo" class="settings-pane active">
+      <div id="tab-stats" class="settings-pane active">
+        <div class="stats-grid">
+          <div class="stats-card"><div class="stats-label" data-i18n="statsFocus">Phút tập trung</div><div class="stats-value" id="stats-focus">0</div></div>
+          <div class="stats-card"><div class="stats-label" data-i18n="statsRounds">Pomodoro xong</div><div class="stats-value" id="stats-rounds">0</div></div>
+          <div class="stats-card"><div class="stats-label" data-i18n="statsCountdown">Countdown xong</div><div class="stats-value" id="stats-countdown">0</div></div>
+          <div class="stats-card"><div class="stats-label" data-i18n="statsTasks">Việc hoàn tất</div><div class="stats-value" id="stats-tasks">0</div></div>
+          <div class="stats-card"><div class="stats-label" data-i18n="statsStreak">Chuỗi đạt mục tiêu</div><div class="stats-value" id="stats-streak">0</div></div>
+          <div class="stats-card"><div class="stats-label" data-i18n="statsGoalShort">Mục tiêu</div><div class="stats-value" id="stats-goal-short">0%</div></div>
+        </div>
+        <div class="stats-goal-block">
+          <div class="setting-row" style="margin-bottom:6px;">
+            <div><div class="setting-label" data-i18n="dailyGoal">Mục tiêu hôm nay</div><div class="setting-sublabel" data-i18n="dailyGoalSub">phút tập trung</div></div>
+            <div class="slider-wrap"><input type="range" min="30" max="480" value="120" id="s-daily-goal" oninput="updateDailyGoal(this.value)" step="15"><span class="slider-val" id="v-daily-goal">120 phút</span></div>
+          </div>
+          <div class="stats-progress"><div class="stats-progress-bar" id="stats-progress-bar"></div></div>
+          <div class="stats-goal-copy" id="stats-goal-note">Bắt đầu một phiên để lấp thanh tiến độ.</div>
+        </div>
+        <div class="stats-last-block">
+          <div class="stats-label" data-i18n="statsLast">Phiên gần nhất</div><div class="stats-last-copy" id="stats-last-session">Chưa có phiên nào hôm nay.</div>
+        </div>
+      </div>
+
+      <div id="tab-pomo" class="settings-pane">
         <div class="setting-row">
           <div><div class="setting-label" data-i18n="settPomoWork">Tập trung</div><div class="setting-sublabel" data-i18n="settMinutes">phút</div></div>
           <div class="slider-wrap"><input type="range" min="5" max="90" value="25" id="s-pomo-work" oninput="updateSetting('pomo-work',this.value)" step="5"><span class="slider-val" id="v-pomo-work">25</span></div>
@@ -1175,7 +278,6 @@ body.touch-mode #touch-hint { display: block; }
         </div>
       </div>
 
-      <!-- Tab Đồng hồ -->
       <div id="tab-clock" class="settings-pane">
         <div class="setting-row" style="margin-bottom:8px;">
           <div><div class="setting-label" data-i18n="settFont">Font</div><div class="setting-sublabel" data-i18n="settFontSub">toàn bộ giao diện</div></div>
@@ -1184,73 +286,151 @@ body.touch-mode #touch-hint { display: block; }
           <button class="font-opt active" id="font-default" onclick="setFont('default',this)" data-i18n="fontDefault">Mặc định</button>
           <button class="font-opt opt-mono" id="font-mono" onclick="setFont('mono',this)">Mono</button>
           <button class="font-opt opt-serif" id="font-serif" onclick="setFont('serif',this)">Serif</button>
-          <button class="font-opt opt-condensed" id="font-condensed" onclick="setFont('condensed',this)" data-i18n-title="titleCondensed" title="SF Pro Condensed — chỉ áp dụng cho đồng hồ">Thin</button>
+          <button class="font-opt opt-condensed" id="font-condensed" onclick="setFont('condensed',this)" data-i18n-title="titleCondensed" title="Chỉ áp dụng cho mặt đồng hồ">Thin</button>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label" data-i18n="settHideDate">Ẩn ngày tháng</div><div class="setting-sublabel" data-i18n="settHideDateSub">giấu thông tin dưới đồng hồ</div></div>
+          <label class="toggle"><input type="checkbox" id="hide-date-toggle" onchange="toggleHideDate(this.checked)"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
         </div>
         <div class="setting-row">
           <div><div class="setting-label" data-i18n="settClockColor">Màu đồng hồ</div><div class="setting-sublabel" data-i18n="settClockColorSub">tùy chỉnh màu sắc</div></div>
           <input type="color" id="s-clock-color" value="#ffffff" oninput="updateSetting('clock-color',this.value)">
         </div>
         <div class="setting-row">
-          <div><div class="setting-label" data-i18n="settClockOpacity">Độ mờ font (Opacity)</div><div class="setting-sublabel" data-i18n="settClockOpacitySub">rõ hay mờ</div></div>
+          <div><div class="setting-label" data-i18n="settClockOpacity">Độ mờ font</div></div>
           <div class="slider-wrap"><input type="range" min="0.1" max="1" value="1" id="s-clock-opacity" oninput="updateSetting('clock-opacity',this.value)" step="0.1"><span class="slider-val" id="v-clock-opacity">1</span></div>
         </div>
         <div class="setting-row">
-          <div><div class="setting-label" data-i18n="settClockBlur">Độ nhòe font (Blur)</div><div class="setting-sublabel" data-i18n="settClockBlurSub">hiệu ứng glow ảo ảo</div></div>
+          <div><div class="setting-label" data-i18n="settClockBlur">Độ nhòe font (Glow)</div></div>
           <div class="slider-wrap"><input type="range" min="0" max="20" value="0" id="s-clock-blur" oninput="updateSetting('clock-blur',this.value)" step="1"><span class="slider-val" id="v-clock-blur">0px</span></div>
         </div>
         <div class="setting-row">
-          <div><div class="setting-label" data-i18n="settClockScale">Kích thước</div><div class="setting-sublabel" data-i18n="settClockScaleSub">to/nhỏ</div></div>
+          <div><div class="setting-label" data-i18n="settClockScale">Kích thước</div></div>
           <div class="slider-wrap"><input type="range" min="0.5" max="2.0" value="1" id="s-clock-scale" oninput="updateSetting('clock-scale',this.value)" step="0.05"><span class="slider-val" id="v-clock-scale">100%</span></div>
         </div>
         <div class="setting-row">
-          <div><div class="setting-label" data-i18n="settOffset">Vị trí đồng hồ</div><div class="setting-sublabel" data-i18n="settOffsetSub">từ giữa</div></div>
+          <div><div class="setting-label" data-i18n="settOffset">Vị trí đồng hồ</div></div>
           <div class="slider-wrap"><input type="range" min="-20" max="10" value="0" id="s-offset" oninput="updateSetting('offset',this.value)" step="1"><span class="slider-val" id="v-offset">0%</span></div>
         </div>
       </div>
 
-      <!-- Tab Display -->
       <div id="tab-display" class="settings-pane">
         <div class="setting-row">
-          <div><div class="setting-label" data-i18n="settUiBlur">Độ mờ UI (UI Blur)</div><div class="setting-sublabel" data-i18n="settUiBlurSub">panel, thông báo, nút</div></div>
+          <div><div class="setting-label" data-i18n="settUiBlur">Độ mờ UI (Blur)</div><div class="setting-sublabel" data-i18n="settUiBlurSub">panel, thông báo</div></div>
           <div class="slider-wrap"><input type="range" min="0" max="40" value="14" id="s-ui-blur" oninput="updateSetting('ui-blur',this.value)"><span class="slider-val" id="v-ui-blur">14px</span></div>
         </div>
         <div class="setting-row">
-          <div><div class="setting-label" data-i18n="settBlur">Blur nền khi chạy</div><div class="setting-sublabel">px</div></div>
+          <div><div class="setting-label" data-i18n="settBlur">Blur nền khi chạy</div></div>
           <div class="slider-wrap"><input type="range" min="0" max="20" value="8" id="s-blur" oninput="updateSetting('blur',this.value)"><span class="slider-val" id="v-blur">8px</span></div>
         </div>
         <div class="setting-row">
-          <div><div class="setting-label" data-i18n="settDim">Tối nền mặc định</div><div class="setting-sublabel" data-i18n="settDimSub">khi chưa chạy</div></div>
+          <div><div class="setting-label" data-i18n="settDim">Tối nền mặc định</div></div>
           <div class="slider-wrap"><input type="range" min="0.2" max="0.9" value="0.55" id="s-dim" oninput="updateSetting('dim',this.value)" step="0.05"><span class="slider-val" id="v-dim">55%</span></div>
         </div>
+        <div class="setting-row" style="margin-top:20px;">
+          <div><div class="setting-label" data-i18n="settHideHint">Ẩn hướng dẫn chạm</div><div class="setting-sublabel" data-i18n="settHideHintSub">giấu dòng chữ dưới bộ đếm</div></div>
+          <label class="toggle"><input type="checkbox" id="hide-hint-toggle" onchange="toggleHideHint(this.checked)"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label" data-i18n="settHideQuoteAuto">Ẩn Quote & Mindset</div><div class="setting-sublabel" data-i18n="settHideQuoteAutoSub">khi bật tối mờ hoặc countdown đang chạy</div></div>
+          <label class="toggle"><input type="checkbox" id="hide-quote-toggle" onchange="toggleHideQuoteAuto(this.checked)"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        </div>
+      </div>
+
+      <div id="tab-bg" class="settings-pane">
+        <div id="drop-zone" onclick="document.getElementById('bg-image-input').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleDrop(event)" style="margin-bottom:10px;">
+          <span data-i18n="dropZoneImg">Kéo thả ảnh, video hoặc thư mục vào đây</span><br>
+          <span style="font-size:10px;opacity:0.5" data-i18n="dropZoneImgSub">hỗ trợ ảnh nền nhiều tấm hoặc 1 video nền</span>
+        </div>
+        <input type="file" id="bg-image-input" accept="image/*,video/*,.mov,.mp4,.webm,.m4v" multiple webkitdirectory directory onchange="handleFileInput(event)">
+        
+        <div id="slideshow-settings" style="display:none; padding:12px; background:rgba(255,255,255,0.05); border-radius:10px; margin-bottom:12px;">
+          <div style="font-size:11px; color:var(--accent); margin-bottom:10px;"><span id="bg-count-label">Đã tải 0 ảnh</span> <span style="opacity:0.5; cursor:pointer;" onclick="clearBg()" data-i18n="clearBg">(Xóa)</span></div>
+          <div class="setting-row" style="margin-bottom:10px">
+            <div><div class="setting-label" data-i18n="settBgInterval">Chuyển ảnh mỗi</div></div>
+            <div class="slider-wrap"><input type="range" min="10" max="3600" value="300" id="s-bg-interval" oninput="updateBgInterval(this.value)" step="10"><span class="slider-val" id="v-bg-interval">300s</span></div>
+          </div>
+          <div class="setting-row" style="margin-bottom:0">
+            <div><div class="setting-label" data-i18n="settBgRandom">Ngẫu nhiên</div><div class="setting-sublabel" data-i18n="settBgRandomSub">không theo thứ tự</div></div>
+            <label class="toggle"><input type="checkbox" id="bg-random-toggle" onchange="toggleBgRandom(this.checked)"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+          </div>
+        </div>
+
+        <input type="text" class="panel-input" id="bg-url-input" placeholder="Hoặc dán link ảnh vào đây…" data-i18n-ph="bgUrlPh" onkeydown="if(event.key==='Enter')applyBgUrl()" style="margin-top:0">
+        <button class="small-btn" onclick="applyBgUrl()" data-i18n="applyLink">Áp dụng link</button>
+        <button class="small-btn" onclick="clearBg()" style="margin-top:5px;opacity:0.5" data-i18n="clearBg">Xóa hình nền</button>
+        <div class="setting-divider"></div>
+        <div id="bg-video-drop-zone" class="drop-zone-alt" onclick="document.getElementById('bg-video-input').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleBgVideoDrop(event)">
+          <span data-i18n="bgVideoDropZone">Kéo thả video nền vào đây</span><br>
+          <span style="font-size:10px;opacity:0.5" data-i18n="bgVideoDropZoneSub">hỗ trợ mov, mp4, webm, m4v…</span>
+        </div>
+        <div class="local-media-actions">
+          <button class="small-btn compact-btn" type="button" onclick="document.getElementById('bg-video-input').click()" data-i18n="bgVideoChoose">Chọn video nền</button>
+          <button class="small-btn compact-btn" type="button" onclick="clearBgVideo()" data-i18n="bgVideoClear">Tắt video nền</button>
+        </div>
+        <input type="file" id="bg-video-input" accept="video/*,.mov,.mp4,.webm,.m4v" onchange="handleBgVideoInput(event)">
         <div class="setting-divider"></div>
         <div class="setting-row">
-          <div><div class="setting-label" data-i18n="settYtBg">Video Youtube làm nền</div><div class="setting-sublabel" data-i18n="settYtBgSub">video lặp im lặng</div></div>
+          <div><div class="setting-label" data-i18n="settYtBg">Video Youtube làm nền</div></div>
           <label class="toggle"><input type="checkbox" id="yt-bg-toggle" onchange="toggleYtBg(this.checked)"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
         </div>
         <div id="yt-bg-section" style="display:none;">
           <input type="text" id="yt-bg-input" placeholder="Dán link YouTube vào đây…" data-i18n-ph="ytBgPh" onkeydown="if(event.key==='Enter')applyYtBg()">
-          <button class="small-btn" onclick="applyYtBg()" style="margin-top:6px;" data-i18n="applyVideoBg">Áp dụng video nền</button>
-          <button class="small-btn" onclick="clearYtBg()" style="margin-top:5px;opacity:0.5;" data-i18n="clearVideoBg">Xóa video nền</button>
+          <button class="small-btn" onclick="applyYtBg()" style="margin-top:6px;" data-i18n="applyVideoBg">Áp dụng video</button>
         </div>
       </div>
 
-      <!-- Tab System -->
       <div id="tab-system" class="settings-pane">
         <div class="setting-row">
           <div><div class="setting-label" data-i18n="settLang">Ngôn ngữ</div><div class="setting-sublabel" id="lang-label">Tiếng Việt</div></div>
-          <label class="toggle"><input type="checkbox" id="lang-toggle" onchange="setLang(this.checked)"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+          <div class="lang-toggle" id="lang-toggle" role="tablist" aria-label="Language switch">
+            <button type="button" class="lang-toggle-pill" id="lang-pill" aria-hidden="true"></button>
+            <button type="button" class="lang-toggle-btn active" id="lang-btn-vi" onclick="setLangFromToggle('vi')" data-i18n="langVi">VI</button>
+            <button type="button" class="lang-toggle-btn" id="lang-btn-en" onclick="setLangFromToggle('en')" data-i18n="langEn">EN</button>
+          </div>
         </div>
         <div class="setting-row">
-          <div><div class="setting-label" data-i18n="settSound">Âm báo</div><div class="setting-sublabel" data-i18n="settSoundSub">khi xong phiên hoặc có lỗi</div></div>
+          <div><div class="setting-label" data-i18n="settSound">Âm báo</div></div>
           <label class="toggle"><input type="checkbox" id="sound-toggle" onchange="setSoundEnabled(this.checked)"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
         </div>
         <div class="setting-row" id="sound-volume-row">
-          <div><div class="setting-label" data-i18n="settSoundVolume">Âm lượng</div><div class="setting-sublabel" data-i18n="settSoundVolumeSub">âm báo nhẹ, không gắt</div></div>
+          <div><div class="setting-label" data-i18n="settSoundVolume">Âm lượng</div></div>
           <div class="slider-wrap"><input type="range" min="0" max="1" value="0.35" id="s-sound-volume" oninput="updateSetting('sound-volume',this.value)" step="0.05"><span class="slider-val" id="v-sound-volume">35%</span></div>
         </div>
         <div class="setting-row">
-          <div><div class="setting-label" data-i18n="settTouchMode">Chế độ chạm</div><div class="setting-sublabel" data-i18n="settTouchModeSub">chạm = bắt/dừng · chạm×2 = đặt lại</div></div>
+          <div><div class="setting-label" data-i18n="settTouchMode">Chế độ chạm</div><div class="setting-sublabel" data-i18n="settTouchModeSub">chạm = bắt/dừng · chạm×2 = reset</div></div>
           <label class="toggle"><input type="checkbox" id="touch-mode-toggle" onchange="setTouchMode(this.checked)"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        </div>
+      </div>
+
+      <!-- Tab Hướng dẫn -->
+      <div id="tab-guide" class="settings-pane">
+        <div class="guide-content" style="color:var(--text); font-size:12px; line-height:1.6; opacity:0.8;">
+          <h3 style="font-size:14px; color:var(--accent); margin-bottom:6px;">Chế độ Tối Mờ (Dim Mode)</h3>
+          <p><strong>Ý nghĩa:</strong> Giúp bảo vệ mắt và tăng cường sự tập trung khi chưa bắt đầu phiên đếm giờ.</p>
+          <p><strong>Cách dùng:</strong> Nhấn vào biểu tượng con mắt ở góc phải dưới, hoặc chạm 1 lần vào màn hình nếu đang bật "Chế độ chạm". Khi tắt tối mờ, nếu bạn có nhiều hình nền, hệ thống sẽ tự động chuyển sang ảnh tiếp theo.</p>
+          <hr style="border:none; border-top:1px solid rgba(255,255,255,0.1); margin:12px 0;">
+
+          <h3 style="font-size:14px; color:var(--accent); margin-bottom:6px;">Cửa sổ nổi (Picture-in-Picture)</h3>
+          <p><strong>Ý nghĩa:</strong> Gắn đồng hồ focus nhỏ trên màn hình ngay cả khi bạn mở tab hay ứng dụng khác.</p>
+          <p><strong>Cách dùng:</strong> Mở mục Công cụ (biểu tượng 4 ô vuông) > Bấm nút cửa sổ nổi (nút thứ 3).</p>
+        </div>
+      </div>
+
+      <!-- Tab Có gì mới -->
+      <div id="tab-whatsnew" class="settings-pane">
+        <div class="guide-content" style="color:var(--text); font-size:12px; line-height:1.6; opacity:0.8;">
+          <h3 style="font-size:14px; color:var(--accent2); margin-bottom:6px;">Trình chiếu hình nền 🌌</h3>
+          <p><strong>Ý nghĩa:</strong> Giờ đây bạn có thể kéo thả toàn bộ thư mục ảnh vào ứng dụng. Focus sẽ luân phiên thay đổi ảnh nền giúp tạo cảm hứng liên tục.</p>
+          <p><strong>Cách dùng:</strong> Vào phần <em>Hình nền</em>, kéo nhiều ảnh cùng lúc. Cài đặt thời gian chuyển ảnh và tính năng "Ngẫu nhiên" sẽ hiện ra.</p>
+          <hr style="border:none; border-top:1px solid rgba(255,255,255,0.1); margin:12px 0;">
+          
+          <h3 style="font-size:14px; color:var(--accent2); margin-bottom:6px;">Animation mượt mà ✨</h3>
+          <p><strong>Ý nghĩa:</strong> Toàn bộ thao tác đóng/mở panel, rê chuột vào phần đếm ngược đã được xử lý lại bằng GSAP cho cảm giác mượt mà và cao cấp hơn.</p>
+          <hr style="border:none; border-top:1px solid rgba(255,255,255,0.1); margin:12px 0;">
+
+          <h3 style="font-size:14px; color:var(--accent2); margin-bottom:6px;">Tối giản tối đa ⚡️</h3>
+          <p><strong>Ý nghĩa:</strong> Thêm chức năng ẩn thứ/ngày/tháng dưới đồng hồ và ẩn hướng dẫn chạm để giao diện clean 100%.</p>
         </div>
       </div>
 
@@ -1258,7 +438,6 @@ body.touch-mode #touch-hint { display: block; }
   </div>
 </div>
 
-<!-- Notification -->
 <div id="notification">
   <div class="notif-card">
     <div class="notif-icon" id="notif-icon">✦</div>
@@ -1268,1676 +447,6 @@ body.touch-mode #touch-hint { display: block; }
   </div>
 </div>
 
-<script>
-
-/* ── I18N SYSTEM ── */
-const TRANS = {
-  vi: {
-    navClock:'Giờ hiện tại', navCountdown:'Đếm ngược', navPomo:'Pomodoro',
-    ncdLeft:'Chỉ còn', ncdTarget:'Là thi THPTQG',
-    panelBg:'Hình nền', panelMusic:'Nhạc nền', panelNotes:'Ghi chú', panelSettings:'Cài đặt', panelTodo: 'Việc cần làm', panelStats: 'Tiến độ',
-    dropZone:'Kéo thả ảnh vào đây', dropZoneSub:'hoặc nhấn để chọn từ máy',
-    bgUrlPh:'Hoặc dán link ảnh vào đây…', applyLink:'Áp dụng link', clearBg:'Xóa hình nền',
-    ytPh:'Dán link YouTube / playlist…', scPh:'Dán link SoundCloud / playlist…', todoPh: 'Bạn muốn làm gì tiếp theo?',
-    playMusic:'Phát nhạc', tabYt:'YouTube', tabSc:'SoundCloud',
-    notesPh:'Gõ gì đó vào đây…\nCứ tự nhiên như đang nghĩ thôi.', exportNotes:'Tải về',
-    tabPomo: 'Pomodoro', tabClock: 'Đồng hồ & Font', tabDisplay: 'Giao diện', tabSystem: 'Hệ thống',
-    settSectPomo:'Pomodoro', settPomoWork:'Tập trung', settMinutes:'phút',
-    settPomoBreak:'Nghỉ ngắn', settPomoLong:'Nghỉ dài', settAfter4:'sau 4 hiệp',
-    settSectDisplay:'Hiển thị', settBlur:'Blur nền khi chạy',
-    settUiBlur:'Độ mờ nền giao diện (UI Blur)', settUiBlurSub:'panel, thông báo, nút',
-    settDim:'Độ tối nền mặc định', settDimSub:'ảnh nền khi chưa chạy',
-    settOffset:'Vị trí đồng hồ', settOffsetSub:'từ giữa',
-    settClockScale:'Cỡ đồng hồ', settClockScaleSub:'phóng to / thu nhỏ',
-    settClockColor: 'Màu đồng hồ', settClockColorSub: 'tùy chỉnh màu sắc',
-    settClockOpacity: 'Độ mờ font (Opacity)', settClockOpacitySub: 'rõ hay mờ',
-    settClockBlur: 'Độ nhòe font (Blur)', settClockBlurSub: 'hiệu ứng glow ảo ảo',
-    settSectInterface:'Giao diện', settLang:'Ngôn ngữ', settLangSub:'giao diện',
-    settFont:'Font', settFontSub:'toàn bộ giao diện',
-    fontDefault:'Mặc định',
-    settSectVideoBg:'Nền video', settYtBg:'YouTube làm nền', settYtBgSub:'video lặp im lặng',
-    ytBgPh:'Dán link YouTube vào đây…', applyVideoBg:'Áp dụng video nền', clearVideoBg:'Xóa video nền',
-    breakBadge:'Giải lao', notifDismiss:'Tiếp tục thôi',
-    langCurrent:'Tiếng Việt', clearDone: 'Xóa việc đã xong', taskLeft: 'việc còn lại',
-    quoteTag:'Mindset', toolPip:'Cửa sổ nổi', toolBg:'Hình nền',
-    toolMusic:'Nhạc nền', toolNotes:'Ghi chú', toolStats:'Tiến độ hôm nay', toolDim:'Tối mờ',
-    toolSettings:'Cài đặt', toolFullscreen:'Toàn màn hình', toolExitFullscreen:'Thoát toàn màn hình',
-    toolClosePlayer:'Đóng cửa sổ nổi', titleExportNotes:'Tải về file .txt',
-    titleCondensed:'SF Pro Condensed — chỉ áp dụng cho đồng hồ', todoAddTitle:'Thêm việc',
-    todoDeleteTitle:'Xóa việc này',
-    todoAdded: 'Thêm:', todoDone: 'Xong:',
-    statsFocus:'Phút tập trung', statsRounds:'Pomodoro xong', statsCountdown:'Countdown xong',
-    statsTasks:'Việc hoàn tất', statsStreak:'Chuỗi đạt mục tiêu', statsGoalShort:'Mục tiêu',
-    statsLast:'Phiên gần nhất', statsLastEmpty:'Chưa có phiên nào hôm nay.',
-    dailyGoal:'Mục tiêu hôm nay', dailyGoalSub:'phút tập trung',
-    statsGoalStart:'Bắt đầu một phiên để lấp thanh tiến độ.',
-    statsGoalReached:'Mục tiêu hôm nay đã hoàn thành.',
-    statsGoalProgress:'{done}/{goal} phút tập trung hôm nay.',
-    statsSessionAt:'lúc {time}', dayShort:'n', goalDayUnit:'ngày',
-    settSound:'Âm báo', settSoundSub:'khi xong phiên hoặc có lỗi',
-    settSoundVolume:'Âm lượng', settSoundVolumeSub:'âm báo nhẹ, không gắt',
-    // Notification & Errors
-    errorTitle: 'Oops!', errYt: 'Link YouTube không hợp lệ.', errSc: 'Link SoundCloud không hợp lệ.', 
-    errNotes: 'Ghi chú đang trống, không có gì để tải về cả.', errPip: 'Trình duyệt không hỗ trợ cửa sổ nổi (PiP). Hãy dùng Chrome hoặc Edge.',
-    // Dynamic
-    start:'Bắt đầu', reset:'Đặt lại', pause:'Tạm dừng', resume:'Tiếp tục', stop:'Dừng',
-    countdownLbl:'Đếm ngược', countdownSub:'Đặt thời gian bên dưới', countingSub:'Đang đếm ngược',
-    pomoLbl:'Pomodoro', focusSub:'Hiệp {n} — Tập trung',
-    shortBreakSub:'Nghỉ ngắn — Đứng dậy đi', longBreakSub:'Nghỉ dài — Thở sâu',
-    fpFocus:'tập trung', fpBreak:'giải lao', fpCountdown:'đếm ngược',
-    notifPomoTitle:'Hiệp {n} xong!', notifBreakDone:'Giải lao xong!',
-    notifBreakMsg:'Tâm trí tươi mới — hãy bước vào hiệp tiếp theo.',
-    notifLongBreak:'\n\nBạn xứng đáng với một giải lao dài.',
-    notifDoneTitle:'Hoàn thành!', wordUnit:' từ',
-    settTouchMode:'Chế độ chạm',
-    settTouchModeSub:'chạm = bắt/dừng · chạm×2 = đặt lại',
-    morning: 'Chào buổi sáng bạn!', afternoon: 'Chào buổi chiều nha!', evening: 'Chào buổi tối nhé!',
-    todoEmpty: 'Bạn còn điều gì để làm không?', taskPending: 'Còn {n} việc cần làm',
-    msgComplete: [
-      "Mọi thứ đã xong — cái khoảnh khắc này là của bạn.",
-      "Tâm trí đã đi qua, và trở về trong lành hơn.",
-      "Xong. Đơn giản vậy thôi — và đó là điều tuyệt vời nhất.",
-      "Bạn đã chứng minh được điều gì đó cho chính mình.",
-      "Giờ là lúc thở. Bạn xứng đáng với khoảnh khắc này."
-    ],
-    msgPomo: [
-      "Một hiệp nữa đã qua — tâm trí tỉnh như sương mai.",
-      "Sóng sau đè sóng trước — bạn vừa vượt qua một hiệp.",
-      "Mỗi giọt tập trung là một viên đá xây nền.",
-      "Dừng lại một chút. Hít thở. Rồi tiếp tục.",
-      "Bạn vừa hoàn thành một hiệp pomodoro — không phải ai cũng làm được."
-    ]
-  },
-  en: {
-    navClock:'Current Time', navCountdown:'Countdown', navPomo:'Pomodoro',
-    ncdLeft:'Only', ncdTarget:'Until Exam',
-    panelBg:'Background', panelMusic:'Music', panelNotes:'Notes', panelSettings:'Settings', panelTodo: 'To-do List', panelStats: 'Progress',
-    dropZone:'Drag & drop image here', dropZoneSub:'or click to choose from device',
-    bgUrlPh:'Or paste image URL here…', applyLink:'Apply link', clearBg:'Clear background',
-    ytPh:'Paste YouTube link / playlist…', scPh:'Paste SoundCloud link / playlist…', todoPh: 'What to do next?',
-    playMusic:'Play', tabYt:'YouTube', tabSc:'SoundCloud',
-    notesPh:'Type something here…\nJust think out loud.', exportNotes:'Export',
-    tabPomo: 'Pomodoro', tabClock: 'Clock & Font', tabDisplay: 'Display', tabSystem: 'System',
-    settSectPomo:'Pomodoro', settPomoWork:'Focus', settMinutes:'minutes',
-    settPomoBreak:'Short Break', settPomoLong:'Long Break', settAfter4:'after 4 rounds',
-    settSectDisplay:'Display', settBlur:'Blur while running',
-    settUiBlur:'UI Blur', settUiBlurSub:'panels, notifications, buttons',
-    settDim:'Background dim', settDimSub:'before timer starts',
-    settOffset:'Clock position', settOffsetSub:'from center',
-    settClockScale:'Clock Scale', settClockScaleSub:'zoom in / out',
-    settClockColor: 'Clock Color', settClockColorSub: 'custom color',
-    settClockOpacity: 'Font Opacity', settClockOpacitySub: 'clear or transparent',
-    settClockBlur: 'Font Blur', settClockBlurSub: 'glow effect',
-    settSectInterface:'Interface', settLang:'Language', settLangSub:'interface',
-    settFont:'Set font', settFontSub:'entire interface',
-    fontDefault:'Default',
-    settSectVideoBg:'Video Background', settYtBg:'YouTube Background', settYtBgSub:'silent loop',
-    ytBgPh:'Paste YouTube link here…', applyVideoBg:'Apply video', clearVideoBg:'Clear video',
-    breakBadge:'Break', notifDismiss:'Continue',
-    langCurrent:'English', clearDone: 'Clear done', taskLeft: 'tasks left',
-    quoteTag:'Mindset', toolPip:'Floating player', toolBg:'Background',
-    toolMusic:'Music', toolNotes:'Notes', toolStats:'Today progress', toolDim:'Dim mode',
-    toolSettings:'Settings', toolFullscreen:'Fullscreen', toolExitFullscreen:'Exit fullscreen',
-    toolClosePlayer:'Close floating player', titleExportNotes:'Download .txt file',
-    titleCondensed:'SF Pro Condensed — clock only', todoAddTitle:'Add task',
-    todoDeleteTitle:'Delete task',
-    todoAdded: 'Added:', todoDone: 'Done:',
-    statsFocus:'Focus minutes', statsRounds:'Pomodoro done', statsCountdown:'Countdown done',
-    statsTasks:'Tasks done', statsStreak:'Goal streak', statsGoalShort:'Goal',
-    statsLast:'Latest session', statsLastEmpty:'No sessions yet today.',
-    dailyGoal:'Today goal', dailyGoalSub:'focus minutes',
-    statsGoalStart:'Start a session to build the progress bar.',
-    statsGoalReached:'Daily goal completed.',
-    statsGoalProgress:'{done}/{goal} focus minutes today.',
-    statsSessionAt:'at {time}', dayShort:'d', goalDayUnit:'days',
-    settSound:'Sound cues', settSoundSub:'when sessions end or errors appear',
-    settSoundVolume:'Volume', settSoundVolumeSub:'soft notification tone',
-    // Notification & Errors
-    errorTitle: 'Oops!', errYt: 'Invalid YouTube link.', errSc: 'Invalid SoundCloud link.', 
-    errNotes: 'Notes are empty, nothing to export.', errPip: 'Browser does not support PiP. Use Chrome/Edge.',
-    // Dynamic
-    start:'Start', reset:'Reset', pause:'Pause', resume:'Resume', stop:'Stop',
-    countdownLbl:'Countdown', countdownSub:'Set time below', countingSub:'Counting down',
-    pomoLbl:'Pomodoro', focusSub:'Round {n} — Focus',
-    shortBreakSub:'Short break — Stand up', longBreakSub:'Long break — Breathe',
-    fpFocus:'focus', fpBreak:'break', fpCountdown:'countdown',
-    notifPomoTitle:'Round {n} done!', notifBreakDone:'Break over!',
-    notifBreakMsg:'Fresh mind — step into the next round.',
-    notifLongBreak:'\n\nYou deserve a long break.',
-    notifDoneTitle:'Done!', wordUnit:' words',
-    settTouchMode:'Touch Mode',
-    settTouchModeSub:'tap = start/pause · 2 taps = reset',
-    morning: 'Good morning!', afternoon: 'Good afternoon!', evening: 'Good evening!',
-    todoEmpty: 'Anything else to do?', taskPending: '{n} tasks left',
-    msgComplete: [
-      "Everything is done — this moment is yours.",
-      "The mind has traveled, returning clearer.",
-      "Done. Simply that — and that's the best part.",
-      "You just proved something to yourself.",
-      "Now, breathe. You deserve this moment."
-    ],
-    msgPomo: [
-      "Another round passed — mind as clear as morning dew.",
-      "Wave upon wave — you just conquered a round.",
-      "Every drop of focus builds the foundation.",
-      "Pause for a moment. Breathe. Then continue.",
-      "You just finished a pomodoro round — not everyone can."
-    ]
-  }
-};
-function t(key, p) {
-  let s = (TRANS[lang] || TRANS.vi)[key] || TRANS.vi[key] || key;
-  if (Array.isArray(s)) return s; // Trả về array nếu là msg
-  if (p) Object.keys(p).forEach(k => s = s.replace('{'+k+'}', p[k]));
-  return s;
-}
-function applyLang() {
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    el.textContent = t(el.dataset.i18n);
-  });
-  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
-    el.placeholder = t(el.dataset.i18nPh);
-  });
-  document.querySelectorAll('[data-i18n-title]').forEach(el => {
-    const label = t(el.dataset.i18nTitle);
-    el.title = label;
-    el.setAttribute('aria-label', label);
-  });
-  document.getElementById('lang-label').textContent = t('langCurrent');
-  renderTodos();
-  updateNotesMeta();
-  renderQuote(false);
-  renderStats();
-  updateDynamicTooltips();
-  updateSoundUi();
-  updateNavCountdown();
-}
-function setLang(isEn) {
-  lang = isEn ? 'en' : 'vi';
-  document.getElementById('lang-label').textContent = t('langCurrent');
-  applyLang();
-  document.documentElement.lang = isEn ? 'en' : 'vi';
-  
-  // Update sliders text translation immediately
-  syncSettings();
-  updateTouchHint();
-  render();
-  savePrefs();
-}
-
-/* ── CONSTANTS: MINDSETS ── */
-const MINDSETS_EN = [
-  { text: "Your time is limited, so don't waste it living someone else's life.", author: "Steve Jobs", mindset: "Protect attention and build around what matters, not noise." },
-  { text: "The difference between successful people and really successful people is that really successful people say no to almost everything.", author: "Warren Buffett", mindset: "Focus grows when you reject low-value work early." },
-  { text: "Great things come from hard work and perseverance. No excuses.", author: "Kobe Bryant", mindset: "Consistency matters more than mood when the work gets heavy." },
-  { text: "I've failed over and over and over again in my life. And that is why I succeed.", author: "Michael Jordan", mindset: "Use failure as feedback, never as identity." },
-  { text: "It's fine to celebrate success, but it is more important to heed the lessons of failure.", author: "Bill Gates", mindset: "Review mistakes quickly and convert them into systems." },
-  { text: "Doing the best at this moment puts you in the best place for the next moment.", author: "Oprah Winfrey", mindset: "Win the current block; the future compounds from now." },
-  { text: "Stress primarily comes from not taking action over something that you can have some control over.", author: "Jeff Bezos", mindset: "Move on controllable things first; clarity follows action." },
-  { text: "Luck has nothing to do with it.", author: "Serena Williams", mindset: "Preparation creates calm before pressure arrives." },
-  { text: "Strength does not come from winning. Your struggles develop your strengths.", author: "Arnold Schwarzenegger", mindset: "Treat resistance as training, not as a sign to quit." },
-  { text: "Opportunity is missed by most people because it is dressed in overalls and looks like work.", author: "Thomas Edison", mindset: "Respect boring repetition; mastery hides there." },
-  { text: "Rock bottom became the solid foundation on which I rebuilt my life.", author: "J.K. Rowling", mindset: "When things break, rebuild with sharper clarity." },
-  { text: "Today is hard, tomorrow will be worse, but the day after tomorrow will be sunshine.", author: "Jack Ma", mindset: "Survive the ugly middle; endurance creates leverage." },
-  { text: "Whether you think you can, or you think you can't, you're right.", author: "Henry Ford", mindset: "Belief shapes effort, and effort changes outcomes." }
-];
-
-const MINDSETS_VI = [
-  { text: "Thời gian của bạn là có hạn, đừng lãng phí nó để sống cuộc đời của người khác.", author: "Steve Jobs", mindset: "Giữ sự chú ý cho điều quan trọng, đừng để nó bị nuốt bởi tạp âm." },
-  { text: "Sự khác biệt giữa người thành công và người cực kỳ thành công là người cực kỳ thành công nói không với gần như mọi thứ.", author: "Warren Buffett", mindset: "Sự tập trung mạnh lên khi bạn từ chối sớm những việc giá trị thấp." },
-  { text: "Những điều lớn lao đến từ lao động chăm chỉ và sự bền bỉ. Không viện cớ.", author: "Kobe Bryant", mindset: "Kỷ luật ổn định luôn mạnh hơn cảm hứng nhất thời." },
-  { text: "Tôi đã thất bại hết lần này đến lần khác trong đời. Và đó là lý do tôi thành công.", author: "Michael Jordan", mindset: "Dùng thất bại như dữ liệu, không dùng nó để định nghĩa bản thân." },
-  { text: "Ăn mừng thành công là tốt, nhưng quan trọng hơn là học từ thất bại.", author: "Bill Gates", mindset: "Xem lại lỗi nhanh và biến nó thành hệ thống tốt hơn." },
-  { text: "Làm tốt nhất ở khoảnh khắc này sẽ đặt bạn vào vị trí tốt nhất cho khoảnh khắc tiếp theo.", author: "Oprah Winfrey", mindset: "Thắng phiên hiện tại trước; tương lai được cộng dồn từ bây giờ." },
-  { text: "Căng thẳng chủ yếu đến từ việc bạn không hành động với điều mình còn kiểm soát được.", author: "Jeff Bezos", mindset: "Bắt đầu từ thứ mình kiểm soát; hành động làm nỗi mơ hồ nhỏ lại." },
-  { text: "May mắn chẳng liên quan gì đến chuyện đó.", author: "Serena Williams", mindset: "Sự chuẩn bị tạo ra bình tĩnh trước áp lực." },
-  { text: "Sức mạnh không đến từ chiến thắng. Những cuộc vật lộn tạo nên sức mạnh của bạn.", author: "Arnold Schwarzenegger", mindset: "Xem sự kháng cự là bài tập rèn người, không phải lý do để bỏ." },
-  { text: "Cơ hội bị đa số bỏ lỡ vì nó mặc đồ lao động và trông giống công việc.", author: "Thomas Edison", mindset: "Tôn trọng sự lặp lại nhàm chán; kỹ năng lớn thường nằm ở đó." },
-  { text: "Chạm đáy trở thành nền móng vững chắc để tôi xây lại cuộc đời.", author: "J.K. Rowling", mindset: "Khi mọi thứ vỡ ra, hãy xây lại với sự rõ ràng sắc hơn." },
-  { text: "Hôm nay khó, ngày mai còn tệ hơn, nhưng ngày kia sẽ có nắng.", author: "Jack Ma", mindset: "Đi qua đoạn xấu xí ở giữa; sức bền tạo nên lợi thế." },
-  { text: "Dù bạn nghĩ mình có thể hay không thể, bạn đều đúng.", author: "Henry Ford", mindset: "Niềm tin định hình nỗ lực, và nỗ lực đổi kết quả." }
-];
-
-const POMO_ICONS = ["✦", "◈", "⬡", "✧", "◇"];
-
-/* ── STATE ── */
-let mode = 'clock';
-let running = false;
-let totalSecs = 0;
-let currentSecs = 0;
-let timerInterval = null;
-let clockInterval = null;
-let quoteInterval = null;
-let quoteIdx = Math.floor(Math.random() * MINDSETS_VI.length);
-let quoteShowMode = 'quote'; // 'quote' | 'mindset'
-let pomoSession = 0;
-let pomoCount = 0;
-let fpOpen = false;
-let isDragging = false;
-let dragOffX = 0, dragOffY = 0;
-let lastTimeStr = '';
-let lang = 'vi';
-let clockDimOn = false;
-let touchMode = false;
-let soundEnabled = true;
-let lastTapTime = 0;
-let tapTimeout = null;
-let holdTimeout = null;
-let holdTriggered = false;
-let clockTouchPending = false;
-
-const settings = {
-  'pomo-work': 25, 'pomo-break': 5, 'pomo-long': 15,
-  blur: 8, dim: 0.55, offset: 0, 'clock-scale': 1, 'ui-blur': 14,
-  'clock-color': '#ffffff', 'clock-opacity': 1, 'clock-blur': 0, 'sound-volume': 0.35
-};
-try {
-  const saved = JSON.parse(localStorage.getItem('focus-settings') || '{}');
-  Object.assign(settings, saved);
-} catch(e) {}
-
-const STATS_KEY = 'focus-stats';
-let focusStats = { goalMinutes: 120, days: {} };
-const TARGET_DATE = new Date('2026-06-11T07:30:00'); // 7:30 11/6/2026
-
-function pad(n) { return String(n).padStart(2,'0'); }
-
-function getDayKey(date = new Date()) {
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
-
-function loadFocusStats() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STATS_KEY) || '{}');
-    return {
-      goalMinutes: Math.max(30, parseInt(saved.goalMinutes, 10) || 120),
-      days: saved.days && typeof saved.days === 'object' ? saved.days : {}
-    };
-  } catch(e) {
-    return { goalMinutes: 120, days: {} };
-  }
-}
-
-function ensureDayStats(key = getDayKey()) {
-  if (!focusStats.days[key]) {
-    focusStats.days[key] = {
-      focusSecs: 0,
-      completedPomos: 0,
-      completedCountdowns: 0,
-      completedTasks: 0,
-      lastSession: null
-    };
-  }
-  return focusStats.days[key];
-}
-
-function saveFocusStats() {
-  try { localStorage.setItem(STATS_KEY, JSON.stringify(focusStats)); } catch(e) {}
-  renderStats();
-}
-
-function formatFocusMinutes(minutes) {
-  return `${minutes} ${t('settMinutes')}`;
-}
-
-function formatLastSession(session) {
-  const label = session.kind === 'pomodoro' ? t('pomoLbl') : t('countdownLbl');
-  return `${label} · ${formatFocusMinutes(Math.round(session.secs / 60))} · ${t('statsSessionAt', { time: formatTime(session.at) })}`;
-}
-
-function calculateGoalStreak() {
-  const goalSecs = (focusStats.goalMinutes || 0) * 60;
-  if (goalSecs <= 0) return 0;
-  let streak = 0;
-  const probe = new Date();
-  while (true) {
-    const day = focusStats.days[getDayKey(probe)];
-    if (day && day.focusSecs >= goalSecs) {
-      streak++;
-      probe.setDate(probe.getDate() - 1);
-      continue;
-    }
-    break;
-  }
-  return streak;
-}
-
-function renderStats() {
-  const goalSlider = document.getElementById('s-daily-goal');
-  if (!goalSlider) return;
-
-  const today = ensureDayStats();
-  const goalMinutes = Math.max(30, parseInt(focusStats.goalMinutes, 10) || 120);
-  const focusMinutes = Math.round((today.focusSecs || 0) / 60);
-  const goalPct = Math.min(100, Math.round((focusMinutes / goalMinutes) * 100));
-
-  goalSlider.value = goalMinutes;
-  document.getElementById('v-daily-goal').textContent = formatFocusMinutes(goalMinutes);
-  document.getElementById('stats-focus').textContent = focusMinutes;
-  document.getElementById('stats-rounds').textContent = today.completedPomos || 0;
-  document.getElementById('stats-countdown').textContent = today.completedCountdowns || 0;
-  document.getElementById('stats-tasks').textContent = today.completedTasks || 0;
-  document.getElementById('stats-streak').textContent = calculateGoalStreak();
-  document.getElementById('stats-goal-short').textContent = `${goalPct}%`;
-  document.getElementById('stats-progress-bar').style.width = `${goalPct}%`;
-  document.getElementById('stats-goal-note').textContent =
-    focusMinutes <= 0
-      ? t('statsGoalStart')
-      : goalPct >= 100
-        ? t('statsGoalReached')
-        : t('statsGoalProgress', { done: focusMinutes, goal: goalMinutes });
-  document.getElementById('stats-last-session').textContent = today.lastSession
-    ? formatLastSession(today.lastSession)
-    : t('statsLastEmpty');
-}
-
-function updateDailyGoal(val) {
-  focusStats.goalMinutes = Math.max(30, parseInt(val, 10) || 120);
-  saveFocusStats();
-}
-
-function updateNotesMeta() {
-  const area = document.getElementById('notes-area');
-  const meta = document.getElementById('notes-meta');
-  if (!area || !meta) return;
-  const words = area.value.trim() ? area.value.trim().split(/\s+/).length : 0;
-  meta.textContent = words + t('wordUnit');
-}
-
-function setTranslatedMeta(id, key) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const label = t(key);
-  el.title = label;
-  el.setAttribute('aria-label', label);
-}
-
-function updateDynamicTooltips() {
-  setTranslatedMeta('btn-zen', document.fullscreenElement ? 'toolExitFullscreen' : 'toolFullscreen');
-  setTranslatedMeta('fp-close', 'toolClosePlayer');
-}
-
-function updateSoundUi() {
-  const toggle = document.getElementById('sound-toggle');
-  const row = document.getElementById('sound-volume-row');
-  if (toggle) toggle.checked = soundEnabled;
-  if (row) row.classList.toggle('disabled', !soundEnabled);
-}
-
-function setSoundEnabled(on) {
-  soundEnabled = on;
-  updateSoundUi();
-  savePrefs();
-}
-
-let audioCtx = null;
-function getAudioCtx() {
-  const AudioCtx = window.AudioContext || window.webkitAudioContext;
-  if (!AudioCtx) return null;
-  if (!audioCtx) audioCtx = new AudioCtx();
-  if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
-  return audioCtx;
-}
-
-function playTone(ctx, freq, start, duration, gain, type = 'sine') {
-  const osc = ctx.createOscillator();
-  const amp = ctx.createGain();
-  osc.type = type;
-  osc.frequency.setValueAtTime(freq, start);
-  amp.gain.setValueAtTime(0.0001, start);
-  amp.gain.linearRampToValueAtTime(gain, start + 0.01);
-  amp.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-  osc.connect(amp);
-  amp.connect(ctx.destination);
-  osc.start(start);
-  osc.stop(start + duration + 0.02);
-}
-
-function playNotifSound(kind = 'success') {
-  if (!soundEnabled) return;
-  const ctx = getAudioCtx();
-  if (!ctx) return;
-
-  const vol = Math.max(0.05, Math.min(1, settings['sound-volume'] || 0.35)) * 0.08;
-  const now = ctx.currentTime + 0.01;
-
-  if (kind === 'error') {
-    playTone(ctx, 220, now, 0.12, vol, 'triangle');
-    playTone(ctx, 180, now + 0.14, 0.18, vol * 0.95, 'triangle');
-    return;
-  }
-
-  if (kind === 'break') {
-    playTone(ctx, 392, now, 0.10, vol, 'sine');
-    playTone(ctx, 523.25, now + 0.12, 0.14, vol * 0.9, 'sine');
-    playTone(ctx, 659.25, now + 0.26, 0.18, vol * 0.85, 'sine');
-    return;
-  }
-
-  playTone(ctx, 523.25, now, 0.12, vol, 'sine');
-  playTone(ctx, 659.25, now + 0.12, 0.15, vol * 0.95, 'sine');
-  playTone(ctx, 783.99, now + 0.26, 0.2, vol * 0.9, 'sine');
-}
-
-function recordSession(kind, secs) {
-  if (!secs) return;
-  const today = ensureDayStats();
-  today.focusSecs += secs;
-  if (kind === 'pomodoro') today.completedPomos += 1;
-  if (kind === 'countdown') today.completedCountdowns += 1;
-  today.lastSession = { kind, secs, at: Date.now() };
-  saveFocusStats();
-}
-
-function adjustCompletedTasks(delta) {
-  const today = ensureDayStats();
-  today.completedTasks = Math.max(0, (today.completedTasks || 0) + delta);
-  saveFocusStats();
-}
-
-focusStats = loadFocusStats();
-
-/* ── SETTINGS TABS ── */
-function switchSettingsTab(tabId, btn) {
-  document.querySelectorAll('.settings-tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.settings-pane').forEach(p => p.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById(tabId).classList.add('active');
-}
-
-/* ── FONT SETTINGS ── */
-function setFont(type, btn) {
-  document.querySelectorAll('.font-opt').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  else {
-    const el = document.getElementById('font-' + type);
-    if (el) el.classList.add('active');
-  }
-  document.body.classList.remove('font-mono', 'font-serif', 'font-condensed');
-  if (type !== 'default') document.body.classList.add('font-' + type);
-  
-  // Đồng bộ với PiP (Cửa sổ nổi) nếu đang mở
-  if (pipWindow) {
-    pipWindow.document.body.className = '';
-    if (type !== 'default') pipWindow.document.body.classList.add('font-' + type);
-  }
-  
-  savePrefs();
-}
-
-/* ── COUNTDOWN TO TARGET DATE ── */
-function updateNavCountdown() {
-  const now = new Date();
-  const diff = TARGET_DATE - now;
-  if (diff <= 0) {
-    document.getElementById('ncd-time').textContent = `00${t('dayShort')} 00:00:00`;
-    return;
-  }
-  const days = Math.floor(diff / 86400000);
-  const hours = Math.floor((diff % 86400000) / 3600000);
-  const mins = Math.floor((diff % 3600000) / 60000);
-  const secs = Math.floor((diff % 60000) / 1000);
-  document.getElementById('ncd-time').textContent =
-    days + t('dayShort') + ' ' + pad(hours) + ':' + pad(mins) + ':' + pad(secs);
-}
-updateNavCountdown();
-setInterval(updateNavCountdown, 1000);
-
-/* ── TODO LOGIC ── */
-let todos = JSON.parse(localStorage.getItem('focus-todos') || '[]');
-
-function saveTodos() {
-  localStorage.setItem('focus-todos', JSON.stringify(todos));
-  renderTodos();
-}
-
-function formatTime(ms) {
-  if(!ms) return '';
-  const d = new Date(ms);
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function addTodo() {
-  const input = document.getElementById('todo-input');
-  const text = input.value.trim();
-  if (text) {
-    todos.unshift({ id: Date.now(), text, done: false, addedAt: Date.now(), completedAt: null });
-    input.value = '';
-    saveTodos();
-  }
-}
-
-function toggleTodo(id) {
-  const todo = todos.find(t => t.id === id);
-  if (todo) {
-    const wasDone = todo.done;
-    todo.done = !todo.done;
-    todo.completedAt = todo.done ? Date.now() : null;
-    if (!wasDone && todo.done) adjustCompletedTasks(1);
-    if (wasDone && !todo.done) adjustCompletedTasks(-1);
-    saveTodos();
-  }
-}
-
-function deleteTodo(id, e) {
-  e.stopPropagation();
-  todos = todos.filter(t => t.id !== id);
-  saveTodos();
-}
-
-function clearDoneTodos() {
-  todos = todos.filter(t => !t.done);
-  saveTodos();
-}
-
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h >= 5 && h < 12) return t('morning');
-  if (h >= 12 && h < 18) return t('afternoon');
-  return t('evening');
-}
-
-function renderTodos() {
-  const list = document.getElementById('todo-list');
-  list.innerHTML = '';
-  let pending = 0;
-  todos.forEach(tItem => {
-    if (!tItem.done) pending++;
-    const div = document.createElement('div');
-    div.className = `todo-item ${tItem.done ? 'done' : ''}`;
-    div.onclick = () => toggleTodo(tItem.id);
-    div.innerHTML = `
-      <div class="todo-check">
-        <svg class="todo-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M20 6L9 17l-5-5"/></svg>
-      </div>
-      <div class="todo-info">
-        <span class="todo-text">${tItem.text}</span>
-        <div class="todo-timestamps">${t('todoAdded')} ${formatTime(tItem.addedAt)} ${tItem.done && tItem.completedAt ? ' | ' + t('todoDone') + ' ' + formatTime(tItem.completedAt) : ''}</div>
-      </div>
-      <button class="todo-del" onclick="deleteTodo(${tItem.id}, event)" title="${t('todoDeleteTitle')}" aria-label="${t('todoDeleteTitle')}">✕</button>
-    `;
-    list.appendChild(div);
-  });
-
-  document.getElementById('todo-count').textContent = pending + ' ' + t('taskLeft');
-  list.setAttribute('data-empty', t('todoEmpty'));
-
-  const btnText = document.getElementById('todo-btn-text');
-  if (pending > 0) {
-    btnText.textContent = t('taskPending', {n: pending});
-  } else {
-    btnText.textContent = getGreeting();
-  }
-}
-
-/* ── QUOTES ── */
-function setQuoteContent(q) {
-  const main = document.getElementById('quote-main');
-  const divider = document.querySelector('#quote-content .quote-divider');
-  const note = document.getElementById('quote-note');
-  const author = document.getElementById('quote-author');
-  const tag = document.getElementById('quote-tag');
-
-  if (quoteShowMode === 'mindset') {
-    tag.textContent = lang === 'vi' ? 'Mindset' : 'Mindset';
-    main.style.display = 'none';
-    if (divider) divider.style.display = 'none';
-    note.style.display = '';
-    note.textContent = q.mindset.replace(/[.。,،]+$/, '');
-    author.textContent = '';
-  } else {
-    tag.textContent = lang === 'vi' ? 'Quote' : 'Quote';
-    main.style.display = '';
-    if (divider) divider.style.display = 'none';
-    note.style.display = 'none';
-    main.textContent = '\u201c' + q.text.replace(/[.。,،]+$/, '') + '\u201d';
-    author.textContent = '\u2014 ' + q.author;
-  }
-}
-
-function renderQuote(animate = true) {
-  const quotePool = lang === 'en' ? MINDSETS_EN : MINDSETS_VI;
-  const q = quotePool[quoteIdx % quotePool.length];
-  const content = document.getElementById('quote-content');
-  const author = document.getElementById('quote-author');
-  if (!animate) {
-    setQuoteContent(q);
-    content.style.opacity = 1;
-    author.style.opacity = 1;
-    return;
-  }
-  content.style.opacity = 0;
-  author.style.opacity = 0;
-  setTimeout(() => {
-    setQuoteContent(q);
-    content.style.opacity = 1;
-    author.style.opacity = 1;
-  }, 400);
-}
-renderQuote(false);
-document.getElementById('quote-box').addEventListener('click', () => {
-  quoteShowMode = quoteShowMode === 'quote' ? 'mindset' : 'quote';
-  renderQuote(true);
-});
-quoteInterval = setInterval(() => {
-  quoteIdx++;
-  renderQuote(true);
-}, 20000);
-
-/* ── INTRO REVEAL ── */
-let introDone = false;
-
-function setIntroProgress(value) {
-  const counter = document.getElementById('intro-counter');
-  const bar = document.getElementById('intro-progress-bar');
-  const clamped = Math.max(0, Math.min(100, value));
-  if (!counter || !bar) return;
-  counter.textContent = clamped < 100 ? String(Math.round(clamped)).padStart(2, '0') : '100';
-  counter.style.setProperty('--intro-progress', (clamped / 100).toFixed(4));
-  bar.style.transform = 'scaleX(' + (clamped / 100).toFixed(4) + ')';
-}
-
-function finishIntro() {
-  const intro = document.getElementById('intro-screen');
-  if (!intro || introDone) return;
-  introDone = true;
-  intro.classList.add('is-unmasking');
-  document.body.classList.remove('intro-active');
-  setTimeout(() => intro.classList.add('is-finished'), 680);
-  setTimeout(() => intro.remove(), 1250);
-}
-
-function animateIntroOut() {
-  const counter = document.getElementById('intro-counter');
-  if (!counter) { finishIntro(); return; }
-
-  // Wrap từng ký tự trong một hộp overflow:hidden — char trượt trái, bị cắt bởi chính hộp đó
-  const chars = [...counter.textContent];
-  counter.innerHTML = chars
-    .map(c => `<span class="intro-char-wrap"><span class="intro-char">${c}</span></span>`)
-    .join('');
-
-  if (typeof gsap !== 'undefined') {
-    gsap.to('#intro-counter .intro-char', {
-      xPercent: -110,
-      duration: 0.42,
-      stagger: { each: 0.10, from: 'end' },
-      ease: 'power3.in',
-      onComplete: finishIntro
-    });
-  } else {
-    setTimeout(finishIntro, 400);
-  }
-}
-
-function startIntro() {
-  const intro = document.getElementById('intro-screen');
-  const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (!intro || introDone) {
-    document.body.classList.remove('intro-active');
-    return;
-  }
-
-  setIntroProgress(0);
-  requestAnimationFrame(() => intro.classList.add('is-live'));
-
-  if (prefersReduced) {
-    setIntroProgress(100);
-    setTimeout(finishIntro, 120);
-    return;
-  }
-
-  const duration = 3200;
-  const startedAt = performance.now();
-  const frame = now => {
-    const raw = Math.min(1, (now - startedAt) / duration);
-    const eased = 1 - Math.pow(1 - raw, 3);
-    setIntroProgress(eased * 100);
-    if (raw < 1) {
-      requestAnimationFrame(frame);
-      return;
-    }
-    animateIntroOut();
-  };
-
-  requestAnimationFrame(frame);
-}
-
-/* ── MODE SWITCH ── */
-function switchMode(m) {
-  stop();
-  mode = m;
-  document.querySelectorAll('.nav-btn').forEach((b,i) => {
-    if(!b.classList.contains('todo-nav-btn')) {
-      b.classList.toggle('active', ['clock','countdown','pomodoro'][i] === m);
-    }
-  });
-  closeAllPanels();
-  render();
-}
-
-/* ── RENDER ── */
-function render() {
-  const lbl = document.getElementById('mode-label');
-  const sub = document.getElementById('sub-label');
-  const ci = document.getElementById('countdown-input');
-  const dots = document.getElementById('pomo-dots');
-  const ctrl = document.getElementById('controls');
-  const td = document.getElementById('time-display');
-  td.classList.remove('running','warning');
-  dots.innerHTML = '';
-  ci.style.display = 'none';
-
-  if (mode === 'clock') {
-    lbl.textContent = '';
-    sub.textContent = '';
-    ctrl.innerHTML = '';
-    document.getElementById('clock-display').classList.add('clock-mode');
-    document.getElementById('btn-dim').style.display = '';
-    clearInterval(clockInterval);
-    updateClock();
-    clockInterval = setInterval(updateClock, 1000);
-  } else {
-    document.getElementById('clock-display').classList.remove('clock-mode');
-    document.getElementById('btn-dim').style.display = 'none';
-    if (clockDimOn) { clockDimOn = false; document.body.classList.remove('clock-dim'); document.getElementById('btn-dim').classList.remove('active'); }
-    clearInterval(clockInterval);
-    if (mode === 'countdown') {
-      lbl.textContent = t('countdownLbl');
-      sub.textContent = t('countdownSub');
-      ci.style.display = 'flex';
-      setTimeDisplay('00:00:00');
-      ctrl.innerHTML = `
-        <button class="ctrl-btn primary" onclick="startCountdown()">${t('start')}</button>
-        <button class="ctrl-btn" onclick="stop()">${t('reset')}</button>`;
-    } else {
-      lbl.textContent = t('pomoLbl');
-      renderPomoDots();
-      setTimeDisplay(pad(settings['pomo-work']) + ':00');
-      sub.textContent = t('focusSub', {n: pomoCount + 1});
-      ctrl.innerHTML = `
-        <button class="ctrl-btn primary" onclick="startPomo()">${t('start')}</button>
-        <button class="ctrl-btn" onclick="stop()">${t('reset')}</button>`;
-    }
-  }
-  updateTouchHint();
-}
-
-/* ── SMOOTH TIME DISPLAY ── */
-function setTimeDisplay(str) {
-  const td = document.getElementById('time-display');
-  if (str !== lastTimeStr) {
-    td.classList.remove('tick');
-    void td.offsetWidth;
-    td.classList.add('tick');
-    lastTimeStr = str;
-  }
-  td.innerHTML = str.replace(/:/g, '<span class="time-colon">:</span>');
-  document.getElementById('fp-time').innerHTML = str.replace(/:/g, '<span style="opacity:0.7">:</span>');
-  if (pipWindow) {
-    const pipTime = pipWindow.document.getElementById('fp-time');
-    if (pipTime) pipTime.innerHTML = str.replace(/:/g, '<span style="opacity:0.7">:</span>');
-    const pipMode = pipWindow.document.getElementById('fp-mode');
-    if (pipMode) pipMode.textContent = document.getElementById('fp-mode').textContent;
-  }
-}
-
-/* ── CLOCK ── */
-function updateClock() {
-  const now = new Date();
-  const str = pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
-  setTimeDisplay(str);
-  const locale = lang === 'en' ? 'en-US' : 'vi-VN';
-  const options = { weekday: 'long', month: 'long', day: 'numeric' };
-  document.getElementById('mode-label').textContent = now.toLocaleDateString(locale, options);
-  document.getElementById('fp-mode').textContent = lang === 'en' ? 'current time' : 'giờ hiện tại';
-  
-  if (now.getSeconds() === 0 && todos.filter(t => !t.done).length === 0) {
-    document.getElementById('todo-btn-text').textContent = getGreeting();
-  }
-}
-
-/* ── POMODORO DOTS ── */
-function renderPomoDots() {
-  const dots = document.getElementById('pomo-dots');
-  dots.innerHTML = '';
-  for (let i = 0; i < 4; i++) {
-    const d = document.createElement('div');
-    d.className = 'pomo-dot' + (i < pomoCount % 4 ? ' done' : '');
-    dots.appendChild(d);
-  }
-}
-
-/* ── COUNTDOWN ── */
-function startCountdown() {
-  const h = parseInt(document.getElementById('input-h').value) || 0;
-  const m = parseInt(document.getElementById('input-m').value) || 0;
-  const s = parseInt(document.getElementById('input-s').value) || 0;
-  totalSecs = h * 3600 + m * 60 + s;
-  if (totalSecs <= 0) return;
-  currentSecs = totalSecs;
-  document.getElementById('countdown-input').style.display = 'none';
-  document.getElementById('sub-label').textContent = t('countingSub');
-  document.getElementById('controls').innerHTML = `
-    <button class="ctrl-btn" onclick="pauseResume()" id="pause-btn">${t('pause')}</button>
-    <button class="ctrl-btn" onclick="stop()">${t('stop')}</button>`;
-  running = true;
-  document.getElementById('time-display').classList.add('running');
-  setBgFocus(true);
-  document.body.classList.add('timer-running');
-  closeAllPanels();
-  timerInterval = setInterval(tickCountdown, 1000);
-  document.getElementById('fp-mode').textContent = t('fpCountdown');
-  updateTouchHint();
-}
-
-function tickCountdown() {
-  currentSecs--;
-  if (currentSecs <= 0) {
-    currentSecs = 0;
-    setTimeDisplay('00:00');
-    clearInterval(timerInterval);
-    running = false;
-    setBgFocus(false);
-    document.body.classList.remove('timer-running');
-    document.getElementById('time-display').classList.remove('running','warning');
-    recordSession('countdown', totalSecs);
-    const msgArr = t('msgComplete');
-    showNotif('◇', t('notifDoneTitle'), msgArr[Math.floor(Math.random()*msgArr.length)], 'success');
-    return;
-  }
-  if (currentSecs <= 10) document.getElementById('time-display').classList.add('warning');
-  displayCountdownTime(currentSecs);
-}
-
-function displayCountdownTime(s) {
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = s % 60;
-  setTimeDisplay(h > 0
-    ? pad(h) + ':' + pad(m) + ':' + pad(sec)
-    : pad(m) + ':' + pad(sec));
-}
-
-/* ── POMODORO ── */
-function startPomo() {
-  pomoSession = 0;
-  startPomoWork();
-}
-function startPomoWork() {
-  pomoSession = 0;
-  currentSecs = settings['pomo-work'] * 60;
-  document.getElementById('sub-label').textContent = t('focusSub', {n: pomoCount + 1});
-  document.getElementById('break-badge').style.display = 'none';
-  document.getElementById('controls').innerHTML = `
-    <button class="ctrl-btn" onclick="pauseResume()" id="pause-btn">${t('pause')}</button>
-    <button class="ctrl-btn" onclick="stop()">${t('stop')}</button>`;
-  running = true;
-  document.getElementById('time-display').classList.add('running');
-  setBgFocus(true);
-  document.body.classList.add('timer-running');
-  closeAllPanels();
-  timerInterval = setInterval(tickPomo, 1000);
-  document.getElementById('fp-mode').textContent = t('fpFocus');
-  updateTouchHint();
-}
-function startPomoBreak(long) {
-  pomoSession = long ? 2 : 1;
-  currentSecs = (long ? settings['pomo-long'] : settings['pomo-break']) * 60;
-  document.getElementById('sub-label').textContent = long ? t('longBreakSub') : t('shortBreakSub');
-  document.getElementById('break-badge').style.display = 'block';
-  document.getElementById('time-display').classList.remove('running','warning');
-  document.getElementById('time-display').style.color = 'var(--accent2)';
-  document.getElementById('controls').innerHTML = `
-    <button class="ctrl-btn" onclick="pauseResume()" id="pause-btn">${t('pause')}</button>
-    <button class="ctrl-btn" onclick="stop()">${t('stop')}</button>`;
-  setBgFocus(false);
-  running = true;
-  document.body.classList.add('timer-running');
-  closeAllPanels();
-  timerInterval = setInterval(tickPomo, 1000);
-  document.getElementById('fp-mode').textContent = t('fpBreak');
-  updateTouchHint();
-}
-function tickPomo() {
-  currentSecs--;
-  setTimeDisplay(pad(Math.floor(currentSecs/60)) + ':' + pad(currentSecs%60));
-  if (currentSecs <= 10 && pomoSession === 0)
-    document.getElementById('time-display').classList.add('warning');
-  if (currentSecs <= 0) {
-    clearInterval(timerInterval);
-    running = false;
-    document.getElementById('time-display').classList.remove('warning');
-    document.getElementById('time-display').style.color = '';
-    if (pomoSession === 0) {
-      pomoCount++;
-      renderPomoDots();
-      setBgFocus(false);
-      recordSession('pomodoro', settings['pomo-work'] * 60);
-      const isLong = pomoCount % 4 === 0;
-      const msgArr = t('msgPomo');
-      showNotif(
-        POMO_ICONS[pomoCount % POMO_ICONS.length],
-        t('notifPomoTitle', {n: pomoCount}),
-        msgArr[Math.floor(Math.random()*msgArr.length)] + (isLong ? t('notifLongBreak') : ''),
-        'success'
-      );
-      document.getElementById('notif-dismiss').onclick = () => { dismissNotif(); startPomoBreak(isLong); };
-    } else {
-      document.getElementById('break-badge').style.display = 'none';
-      showNotif('✦', t('notifBreakDone'), t('notifBreakMsg'), 'break');
-      document.getElementById('notif-dismiss').onclick = () => { dismissNotif(); startPomoWork(); };
-    }
-  }
-}
-
-/* ── PAUSE / RESUME / STOP ── */
-function pauseResume() {
-  const btn = document.getElementById('pause-btn');
-  if (running) {
-    clearInterval(timerInterval);
-    running = false;
-    if (btn) btn.textContent = t('resume');
-    setBgFocus(false);
-    document.body.classList.remove('timer-running');
-  } else {
-    running = true;
-    if (btn) btn.textContent = t('pause');
-    setBgFocus(true);
-    document.body.classList.add('timer-running');
-    if (mode === 'countdown') timerInterval = setInterval(tickCountdown, 1000);
-    else timerInterval = setInterval(tickPomo, 1000);
-  }
-  updateTouchHint();
-}
-function stop() {
-  clearInterval(timerInterval);
-  clearInterval(clockInterval);
-  running = false;
-  currentSecs = 0; 
-  pomoCount = 0;
-  setBgFocus(false);
-  document.body.classList.remove('timer-running');
-  document.getElementById('break-badge').style.display = 'none';
-  const td = document.getElementById('time-display');
-  td.classList.remove('running','warning');
-  td.style.color = '';
-  render();
-}
-
-/* ── BG FOCUS ── */
-function setBgFocus(on) {
-  document.getElementById('bg-layer').classList.toggle('focused', on);
-  document.getElementById('bg-new').classList.toggle('focused', on);
-  document.getElementById('floating-player').classList.toggle('focused', on);
-}
-
-/* ── SETTINGS ── */
-function updateSetting(key, val) {
-  settings[key] = isNaN(val) && key === 'clock-color' ? val : parseFloat(val);
-  const min = t ? t('settMinutes') : 'phút';
-  const displays = {
-    'pomo-work': v => v + ' ' + min, 'pomo-break': v => v + ' ' + min,
-    'pomo-long': v => v + ' ' + min, blur: v => v + 'px',
-    dim: v => Math.round(v * 100) + '%', offset: v => v + '%',
-    'clock-scale': v => Math.round(v * 100) + '%',
-    'ui-blur': v => v + 'px',
-    'clock-opacity': v => v, 'clock-blur': v => v + 'px',
-    'sound-volume': v => Math.round(v * 100) + '%'
-  };
-  const dispEl = document.getElementById('v-' + key);
-  if(dispEl && displays[key]) dispEl.textContent = displays[key](val);
-  
-  if (key === 'blur') document.documentElement.style.setProperty('--focus-blur', val + 'px');
-  if (key === 'dim') document.documentElement.style.setProperty('--focus-dim', val);
-  if (key === 'offset') document.getElementById('clock-display').style.transform = 'translateY(calc(' + val + 'vh))';
-  if (key === 'clock-scale') document.documentElement.style.setProperty('--clock-scale', val);
-  if (key === 'ui-blur') document.documentElement.style.setProperty('--ui-blur', val + 'px');
-  
-  if (key === 'clock-color') document.documentElement.style.setProperty('--clock-color', val);
-  if (key === 'clock-opacity') document.documentElement.style.setProperty('--clock-opacity', val);
-  if (key === 'clock-blur') document.documentElement.style.setProperty('--clock-blur', val + 'px');
-
-  // Sync to PiP instantly if open
-  if (pipWindow) {
-    if (key === 'clock-color') pipWindow.document.documentElement.style.setProperty('--clock-color', val);
-    if (key === 'clock-opacity') pipWindow.document.documentElement.style.setProperty('--clock-opacity', val);
-    if (key === 'clock-blur') pipWindow.document.documentElement.style.setProperty('--clock-blur', val + 'px');
-  }
-
-  try { localStorage.setItem('focus-settings', JSON.stringify(settings)); } catch(e) {}
-}
-
-/* ── BACKGROUND IMAGE ── */
-function applyBg(url) {
-  const bgNew = document.getElementById('bg-new');
-  const bg = document.getElementById('bg-layer');
-  bgNew.style.backgroundImage = 'url("' + url + '")';
-  bgNew.classList.remove('reveal');
-  void bgNew.offsetWidth; 
-  bgNew.classList.add('reveal');
-  setTimeout(() => {
-    bg.style.backgroundImage = 'url("' + url + '")';
-    bgNew.classList.remove('reveal');
-    bgNew.style.backgroundImage = '';
-  }, 950);
-  document.getElementById('fp-bg').style.backgroundImage = 'url("' + url + '")';
-  document.documentElement.style.setProperty('--notif-bg-img', 'url("' + url + '")');
-  
-  // Lưu URL ảnh để auto-load lại khi refresh
-  localStorage.setItem('focus-bg', url);
-  
-  // Đồng bộ với PiP (Cửa sổ nổi) nếu đang mở
-  if (pipWindow) {
-    const pipBg = pipWindow.document.getElementById('pip-bg');
-    if (pipBg) pipBg.style.backgroundImage = 'url("' + url + '")';
-  }
-}
-function applyBgUrl() {
-  const url = document.getElementById('bg-url-input').value.trim();
-  if (url) applyBg(url);
-}
-function clearBg() {
-  const layerWrap = document.getElementById('bg-layer');
-  layerWrap.style.backgroundImage = '';
-  document.getElementById('bg-new').style.backgroundImage = '';
-  document.getElementById('fp-bg').style.backgroundImage = '';
-  document.getElementById('bg-url-input').value = '';
-  document.documentElement.style.removeProperty('--notif-bg-img');
-  localStorage.removeItem('focus-bg');
-}
-function handleDrop(e) {
-  e.preventDefault();
-  e.currentTarget.classList.remove('dragover');
-  const file = e.dataTransfer.files[0];
-  if (file && file.type.startsWith('image/')) {
-    const reader = new FileReader();
-    reader.onload = ev => applyBg(ev.target.result);
-    reader.readAsDataURL(file);
-  }
-}
-function handleFileInput(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => applyBg(ev.target.result);
-  reader.readAsDataURL(file);
-}
-
-/* ── YOUTUBE BACKGROUND ── */
-function toggleYtBg(enabled) {
-  document.getElementById('yt-bg-section').style.display = enabled ? 'block' : 'none';
-  if (!enabled) clearYtBg();
-}
-function applyYtBg() {
-  const url = document.getElementById('yt-bg-input').value.trim();
-  if (!url) return;
-  let videoId = '';
-  const m = url.match(/(?:youtu\.be\/|v=)([^#&?]{11})/);
-  if (m) videoId = m[1];
-  if (!videoId) { showNotif('!', t('errorTitle'), t('errYt'), 'error'); return; }
-  const src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&disablekb=1&fs=0&modestbranding=1&rel=0&iv_load_policy=3`;
-  document.getElementById('yt-bg-iframe').src = src;
-  document.getElementById('yt-bg-wrap').classList.add('active');
-  document.getElementById('bg-layer').style.opacity = '0';
-  savePrefs();
-}
-function clearYtBg() {
-  document.getElementById('yt-bg-iframe').src = '';
-  document.getElementById('yt-bg-wrap').classList.remove('active');
-  document.getElementById('bg-layer').style.opacity = '';
-  document.getElementById('yt-bg-input').value = '';
-  savePrefs();
-}
-
-/* ── MUSIC TABS ── */
-function switchMusicTab(tab, btn) {
-  document.querySelectorAll('.music-tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('music-tab-yt').style.display = tab === 'yt' ? 'block' : 'none';
-  document.getElementById('music-tab-sc').style.display = tab === 'sc' ? 'block' : 'none';
-}
-
-/* ── YOUTUBE MUSIC ── */
-function loadYT() {
-  const url = document.getElementById('yt-url-input').value.trim();
-  if (!url) return;
-  const iframe = document.getElementById('yt-iframe');
-  const wrap = document.getElementById('yt-frame-wrap');
-  
-  const normalized = url.replace('music.youtube.com', 'www.youtube.com');
-  const listMatch = normalized.match(/[?&]list=([^#&?\s]+)/);
-  const videoMatch = normalized.match(/(?:youtu\.be\/|[?&]v=)([^#&?\s]{11})/);
-  
-  let src = '';
-  if (videoMatch && listMatch) {
-    src = `https://www.youtube.com/embed/${videoMatch[1]}?list=${listMatch[1]}&autoplay=1&rel=0&modestbranding=1`;
-  } else if (listMatch) {
-    src = `https://www.youtube.com/embed/videoseries?list=${listMatch[1]}&autoplay=1&rel=0&modestbranding=1`;
-  } else if (videoMatch) {
-    src = `https://www.youtube.com/embed/${videoMatch[1]}?autoplay=1&loop=1&playlist=${videoMatch[1]}&rel=0&modestbranding=1`;
-  } else {
-    showNotif('!', t('errorTitle'), t('errYt'), 'error');
-    return;
-  }
-  iframe.src = src;
-  wrap.classList.add('visible');
-}
-
-/* ── SOUNDCLOUD MUSIC ── */
-function loadSC() {
-  const url = document.getElementById('sc-url-input').value.trim();
-  if (!url) return;
-  if (!url.includes('soundcloud.com')) {
-    showNotif('!', t('errorTitle'), t('errSc'), 'error');
-    return;
-  }
-  const iframe = document.getElementById('yt-iframe');
-  const wrap = document.getElementById('yt-frame-wrap');
-  const encoded = encodeURIComponent(url);
-  iframe.src = `https://w.soundcloud.com/player/?url=${encoded}&auto_play=true&hide_related=true&show_comments=false&show_user=true&show_reposts=false&visual=true`;
-  wrap.classList.add('visible');
-}
-
-/* ── NOTES ── */
-function saveNotes() {
-  const val = document.getElementById('notes-area').value;
-  localStorage.setItem('focus-notes', val);
-  updateNotesMeta();
-}
-function exportNotes() {
-  const text = document.getElementById('notes-area').value;
-  if (!text.trim()) { showNotif('!', t('errorTitle'), t('errNotes'), 'error'); return; }
-  const blob = new Blob([text], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const now = new Date();
-  a.href = url;
-  a.download = `focus-notes-${now.getDate()}-${now.getMonth()+1}-${now.getFullYear()}.txt`;
-  document.body.appendChild(a); a.click();
-  URL.revokeObjectURL(url); document.body.removeChild(a);
-}
-(function loadNotes() {
-  const saved = localStorage.getItem('focus-notes');
-  if (saved) {
-    document.getElementById('notes-area').value = saved;
-  }
-  updateNotesMeta();
-})();
-
-/* ── PANELS ── */
-function togglePanel(id, btn) {
-  const panel = document.getElementById(id);
-  const isOpen = panel.classList.contains('open');
-  closeAllPanels();
-  if (!isOpen) {
-    panel.classList.add('open');
-    if (btn) btn.classList.add('active');
-  }
-}
-function closePanel(id, btnId) {
-  document.getElementById(id).classList.remove('open');
-  if (btnId) document.getElementById(btnId).classList.remove('active');
-}
-function closeAllPanels() {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
-  document.querySelectorAll('.tool-btn, .todo-nav-btn').forEach(b => b.classList.remove('active'));
-  syncFloatingPlayerState();
-}
-document.addEventListener('click', e => {
-  if (document.body.classList.contains('timer-running')) return;
-  const panels = document.querySelectorAll('.panel');
-  const btns = document.querySelectorAll('.tool-btn, #btn-settings, .todo-nav-btn');
-  let inside = false;
-  panels.forEach(p => { if (p.contains(e.target)) inside = true; });
-  btns.forEach(b => { if (b.contains(e.target)) inside = true; });
-  if (!inside) closeAllPanels();
-});
-
-/* ── NOTIFICATION ── */
-function showNotif(icon, title, msg, sound = 'success') {
-  document.getElementById('notif-icon').textContent = icon;
-  document.getElementById('notif-title').textContent = title;
-  document.getElementById('notif-msg').textContent = msg;
-  document.getElementById('notification').classList.add('show');
-  document.getElementById('notif-dismiss').onclick = dismissNotif;
-  document.body.classList.remove('timer-running');
-  if (sound) playNotifSound(sound);
-}
-function dismissNotif() {
-  document.getElementById('notification').classList.remove('show');
-}
-
-/* ── FULLSCREEN ── */
-function toggleZen() {
-  const isFs = !!document.fullscreenElement;
-  if (!isFs) {
-    if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
-    else if (document.documentElement.webkitRequestFullscreen) document.documentElement.webkitRequestFullscreen();
-    document.getElementById('zen-icon-expand').style.display = 'none';
-    document.getElementById('zen-icon-collapse').style.display = 'block';
-  } else {
-    if (document.exitFullscreen) document.exitFullscreen();
-    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-    document.getElementById('zen-icon-expand').style.display = 'block';
-    document.getElementById('zen-icon-collapse').style.display = 'none';
-  }
-  updateDynamicTooltips();
-}
-document.addEventListener('fullscreenchange', () => {
-  if (!document.fullscreenElement) {
-    document.getElementById('zen-icon-expand').style.display = 'block';
-    document.getElementById('zen-icon-collapse').style.display = 'none';
-  }
-  updateDynamicTooltips();
-});
-
-/* ── FLOATING PLAYER (Cửa sổ nổi - Đồng bộ toàn diện) ── */
-let pipWindow = null;
-
-function getInlineFloatingPlayer() {
-  return document.getElementById('floating-player');
-}
-
-function isInlineFloatingPlayerOpen() {
-  return getInlineFloatingPlayer().classList.contains('show');
-}
-
-function syncFloatingPlayerState() {
-  document.getElementById('btn-pip').classList.toggle('active', !!pipWindow || isInlineFloatingPlayerOpen());
-}
-
-function clampFloatingPlayerPosition(left, top) {
-  const player = getInlineFloatingPlayer();
-  const width = player.offsetWidth || 280;
-  const height = player.offsetHeight || 160;
-  return {
-    left: Math.min(Math.max(16, left), Math.max(16, window.innerWidth - width - 16)),
-    top: Math.min(Math.max(16, top), Math.max(16, window.innerHeight - height - 16))
-  };
-}
-
-function setInlineFloatingPlayerPosition(left, top) {
-  const player = getInlineFloatingPlayer();
-  const pos = clampFloatingPlayerPosition(left, top);
-  player.style.left = pos.left + 'px';
-  player.style.top = pos.top + 'px';
-  player.style.right = 'auto';
-  player.style.bottom = 'auto';
-}
-
-function toggleInlineFloatingPlayer(force) {
-  const player = getInlineFloatingPlayer();
-  const shouldShow = typeof force === 'boolean' ? force : !player.classList.contains('show');
-  player.classList.toggle('show', shouldShow);
-  syncFloatingPlayerState();
-  savePrefs();
-}
-
-function closeFloatingPlayer() {
-  if (pipWindow) {
-    pipWindow.close();
-    return true;
-  }
-  if (isInlineFloatingPlayerOpen()) {
-    toggleInlineFloatingPlayer(false);
-    return true;
-  }
-  return false;
-}
-
-async function toggleFloatingPlayer() {
-  if (closeFloatingPlayer()) {
-    return;
-  }
-
-  if (!('documentPictureInPicture' in window)) {
-    toggleInlineFloatingPlayer(true);
-    return;
-  }
-
-  try {
-    pipWindow = await window.documentPictureInPicture.requestWindow({
-      width: 340, height: 180
-    });
-  } catch (e) {
-    toggleInlineFloatingPlayer(true);
-    return;
-  }
-
-  pipWindow.addEventListener("pagehide", () => {
-    pipWindow = null;
-    syncFloatingPlayerState();
-    savePrefs();
-  });
-  syncFloatingPlayerState();
-
-  // Lấy font và background hiện tại từ trang chính
-  const currentFontClass = Array.from(document.body.classList).find(c => c.startsWith('font-')) || '';
-  const currentBgUrl = document.getElementById('bg-layer').style.backgroundImage;
-
-  pipWindow.document.head.insertAdjacentHTML('beforeend', `
-    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-    <style>
-      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-      @font-face {
-        font-family: 'SF Pro';
-        src: url('SF-Pro.woff2') format('woff2-variations');
-        font-weight: 100 900;
-        font-stretch: 50% 200%;
-      }
-      :root {
-        --clock-color: ${settings['clock-color'] || '#ffffff'};
-        --clock-opacity: ${settings['clock-opacity'] || 1};
-        --clock-blur: ${settings['clock-blur'] || 0}px;
-      }
-      body { 
-        background: #080808; color: white; display: flex; flex-direction: column; 
-        align-items: center; justify-content: center; height: 100vh; overflow: hidden; margin:0;
-        font-family: 'SF Pro', 'DM Mono', sans-serif;
-      }
-      body.font-mono * { font-family: 'DM Mono', monospace !important; }
-      body.font-serif * { font-family: 'Prata', serif !important; }
-      body.font-condensed #fp-time { font-family: 'SF Pro', monospace !important; font-variation-settings: 'wdth' 47, 'opsz' 28, 'wght' 120 !important; }
-      
-      #pip-bg {
-        position: absolute; inset: -10px; background-size: cover; background-position: center; 
-        filter: blur(8px); z-index: 0; opacity: 0.8;
-      }
-      #pip-bg::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,0.55); }
-      #content { position: relative; z-index: 1; text-align: center; }
-      
-      #fp-time {
-        font-family: 'SF Pro', 'DM Mono', monospace; font-size: 58px; font-weight: 200;
-        font-variation-settings: 'wdth' 130; letter-spacing: -0.02em;
-        color: var(--clock-color); opacity: var(--clock-opacity); text-shadow: 0 0 var(--clock-blur) var(--clock-color);
-        font-feature-settings: 'tnum'; line-height: 1;
-      }
-      #fp-mode {
-        font-family: sans-serif; font-size: 11px; letter-spacing: 0.18em; 
-        color: rgba(255,255,255,0.4); text-transform: uppercase; margin-top: 8px;
-      }
-    </style>
-  `);
-  
-  pipWindow.document.body.className = currentFontClass;
-  pipWindow.document.body.innerHTML = `
-    <div id="pip-bg" style="background-image: ${currentBgUrl}"></div>
-    <div id="content">
-      <div id="fp-time">${document.getElementById('time-display').innerHTML}</div>
-      <div id="fp-mode">${document.getElementById('fp-mode').textContent}</div>
-    </div>
-  `;
-}
-
-function startInlineFloatingPlayerDrag(e) {
-  const player = getInlineFloatingPlayer();
-  if (!player.classList.contains('show')) return;
-  if (e.target.closest('#fp-close')) return;
-  const rect = player.getBoundingClientRect();
-  setInlineFloatingPlayerPosition(rect.left, rect.top);
-  isDragging = true;
-  dragOffX = e.clientX - rect.left;
-  dragOffY = e.clientY - rect.top;
-  player.setPointerCapture?.(e.pointerId);
-}
-
-function moveInlineFloatingPlayerDrag(e) {
-  if (!isDragging) return;
-  setInlineFloatingPlayerPosition(e.clientX - dragOffX, e.clientY - dragOffY);
-}
-
-function endInlineFloatingPlayerDrag() {
-  if (!isDragging) return;
-  isDragging = false;
-  savePrefs();
-}
-
-getInlineFloatingPlayer().addEventListener('pointerdown', startInlineFloatingPlayerDrag);
-document.addEventListener('pointermove', moveInlineFloatingPlayerDrag);
-document.addEventListener('pointerup', endInlineFloatingPlayerDrag);
-window.addEventListener('resize', () => {
-  const player = getInlineFloatingPlayer();
-  if (!player.classList.contains('show') || !player.style.top || !player.style.left) return;
-  const rect = player.getBoundingClientRect();
-  setInlineFloatingPlayerPosition(rect.left, rect.top);
-});
-
-/* ── TOUCH / TAP MODE ── */
-function setTouchMode(on) {
-  touchMode = on;
-  document.body.classList.toggle('touch-mode', on);
-  if (!on) {
-    lastTapTime = 0;
-    clearTimeout(tapTimeout);
-    clearTimeout(holdTimeout);
-    holdTriggered = false;
-    clockTouchPending = false;
-  }
-  updateTouchHint();
-  savePrefs();
-}
-
-function updateTouchHint() {
-  const hint = document.getElementById('touch-hint');
-  if (!hint) return;
-  if (lang === 'en') {
-    if (mode === 'clock') hint.textContent = 'tap = dim · hold = fullscreen';
-    else if (running)      hint.textContent = 'tap = pause/resume · 2 taps = reset';
-    else                   hint.textContent = 'tap = start · 2 taps = reset';
-  } else {
-    if (mode === 'clock') hint.textContent = 'chạm = tối mờ · giữ = toàn màn hình';
-    else if (running || currentSecs > 0) hint.textContent = 'chạm = dừng/tiếp · chạm×2 = đặt lại';
-    else                  hint.textContent = 'chạm = bắt đầu · chạm×2 = đặt lại';
-  }
-}
-
-function flashTapRing() {
-  const ring = document.getElementById('tap-ring');
-  ring.classList.remove('pulse');
-  void ring.offsetWidth;
-  ring.classList.add('pulse');
-  ring.addEventListener('animationend', () => ring.classList.remove('pulse'), { once: true });
-}
-
-function handleClockTap(e) {
-  if (!touchMode) return;
-  if (isDragging) return;
-  if (e.target.closest('.time-input')) return;
-  if (e.target.closest('input, button, .ctrl-btn, .panel, #nav, #bottom-left, #bottom-right, #floating-player, #notification, #break-badge, .tool-btn, .nav-btn, .music-tab, .toggle, select, textarea, #quote-box')) return;
-  
-  e.preventDefault();
-  e.stopPropagation();
-
-  if (mode === 'clock') {
-    clockTouchPending = true;
-    holdTriggered = false;
-    clearTimeout(holdTimeout);
-    holdTimeout = setTimeout(() => {
-      holdTriggered = true;
-      clockTouchPending = false;
-      toggleZen();
-      updateTouchHint();
-    }, 520);
-    return;
-  }
-
-  flashTapRing();
-  const now = Date.now();
-  if (now - lastTapTime < 300) {
-    clearTimeout(tapTimeout); 
-    lastTapTime = 0; 
-    if (mode !== 'clock') stop(); 
-  } else {
-    lastTapTime = now;
-    tapTimeout = setTimeout(() => {
-      if (mode === 'clock') {
-        toggleClockDim();
-      } else {
-        if (running) pauseResume();
-        else {
-          if (currentSecs > 0) pauseResume();
-          else {
-            if (mode === 'countdown') startCountdown();
-            else if (mode === 'pomodoro') startPomo();
-          }
-        }
-      }
-      updateTouchHint();
-    }, 300);
-  }
-}
-
-function completeClockTouch() {
-  if (!touchMode || mode !== 'clock' || !clockTouchPending) return;
-  clearTimeout(holdTimeout);
-  clockTouchPending = false;
-  if (holdTriggered) {
-    holdTriggered = false;
-    return;
-  }
-  flashTapRing();
-  toggleClockDim();
-  updateTouchHint();
-}
-
-document.addEventListener('pointerdown', handleClockTap);
-document.addEventListener('pointerup', completeClockTouch);
-document.addEventListener('pointercancel', () => {
-  clearTimeout(holdTimeout);
-  clockTouchPending = false;
-  holdTriggered = false;
-});
-document.addEventListener('pointerdown', e => {
-  const btn = e.target.closest('.ctrl-btn, .nav-btn, .tool-btn, .small-btn, #notif-dismiss, .panel-close, .music-tab, .todo-add-btn, .settings-tab-btn, .font-opt');
-  if (!btn) return;
-  const rect = btn.getBoundingClientRect();
-  const size = Math.max(rect.width, rect.height) * 1.5;
-  const x = e.clientX - rect.left - size / 2;
-  const y = e.clientY - rect.top - size / 2;
-  const ripple = document.createElement('span');
-  ripple.className = 'ripple';
-  ripple.style.cssText = `width:${size}px;height:${size}px;left:${x}px;top:${y}px`;
-  btn.appendChild(ripple);
-  setTimeout(() => ripple.remove(), 520);
-});
-
-/* ── PREFERENCES PERSISTENCE & INIT ── */
-const PREFS_KEY = 'focus-prefs';
-
-function savePrefs() {
-  try {
-    const player = getInlineFloatingPlayer();
-    const prefs = {
-      lang,
-      font: document.querySelector('.font-opt.active')?.id?.replace('font-','') || 'default',
-      touchMode,
-      soundEnabled,
-      ytBgUrl: document.getElementById('yt-bg-input')?.value || '',
-      ytBgActive: document.getElementById('yt-bg-toggle')?.checked || false,
-      inlinePlayerOpen: player.classList.contains('show'),
-      inlinePlayerPos: player.style.left && player.style.top
-        ? {
-            left: parseFloat(player.style.left) || 24,
-            top: parseFloat(player.style.top) || 84
-          }
-        : null,
-    };
-    localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
-  } catch(e) {}
-}
-
-function loadPrefs() {
-  try {
-    const prefs = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
-    
-    // Ngôn ngữ
-    lang = prefs.lang === 'en' ? 'en' : 'vi';
-    const langTog = document.getElementById('lang-toggle');
-    if (langTog) langTog.checked = (lang === 'en');
-    document.documentElement.lang = lang;
-    document.getElementById('lang-label').textContent = t('langCurrent');
-    applyLang();
-
-    // Font
-    if (prefs.font && prefs.font !== 'default') {
-      const btn = document.getElementById('font-' + prefs.font);
-      if (btn) setFont(prefs.font, btn);
-    }
-
-    // Touch Mode
-    touchMode = !!prefs.touchMode;
-    const touchTog = document.getElementById('touch-mode-toggle');
-    if (touchTog) touchTog.checked = touchMode;
-    document.body.classList.toggle('touch-mode', touchMode);
-    updateTouchHint();
-
-    // Sound
-    soundEnabled = prefs.soundEnabled !== false;
-    updateSoundUi();
-
-    // Background từ local storage
-    const savedBgUrl = localStorage.getItem('focus-bg');
-    if (savedBgUrl) {
-      applyBg(savedBgUrl);
-      const inp = document.getElementById('bg-url-input');
-      if (inp) inp.value = savedBgUrl;
-    }
-
-    // Video Bg
-    if (prefs.ytBgActive && prefs.ytBgUrl) {
-      const tog = document.getElementById('yt-bg-toggle');
-      if (tog) { tog.checked = true; toggleYtBg(true); }
-      const inp = document.getElementById('yt-bg-input');
-      if (inp) inp.value = prefs.ytBgUrl;
-      applyYtBg();
-    }
-
-    // Inline floating player fallback
-    if (prefs.inlinePlayerPos && Number.isFinite(prefs.inlinePlayerPos.left) && Number.isFinite(prefs.inlinePlayerPos.top)) {
-      setInlineFloatingPlayerPosition(prefs.inlinePlayerPos.left, prefs.inlinePlayerPos.top);
-    }
-    if (prefs.inlinePlayerOpen) {
-      toggleInlineFloatingPlayer(true);
-    }
-    syncFloatingPlayerState();
-    renderStats();
-    updateDynamicTooltips();
-  } catch(e) {}
-}
-
-function syncSettings() {
-  const sliderMap = {
-    'pomo-work': 's-pomo-work', 'pomo-break': 's-pomo-break',
-    'pomo-long': 's-pomo-long', blur: 's-blur', dim: 's-dim', offset: 's-offset',
-    'clock-scale': 's-clock-scale', 'ui-blur': 's-ui-blur',
-    'clock-color': 's-clock-color', 'clock-opacity': 's-clock-opacity', 'clock-blur': 's-clock-blur',
-    'sound-volume': 's-sound-volume'
-  };
-  Object.keys(sliderMap).forEach(k => {
-    const el = document.getElementById(sliderMap[k]);
-    if (el) { el.value = settings[k]; updateSetting(k, settings[k]); }
-  });
-}
-
-// Chạy loadPrefs ĐẦU TIÊN để xác định ngôn ngữ, sau đó mới syncSettings để label hiển thị đúng
-loadPrefs();
-syncSettings();
-renderTodos();
-render();
-renderStats();
-updateDynamicTooltips();
-syncFloatingPlayerState();
-if (document.fonts && document.fonts.ready) document.fonts.ready.then(startIntro).catch(startIntro);
-else startIntro();
-
-/* ── CLOCK DIM MODE ── */
-function toggleClockDim() {
-  clockDimOn = !clockDimOn;
-  document.body.classList.toggle('clock-dim', clockDimOn);
-  document.getElementById('btn-dim').classList.toggle('active', clockDimOn);
-}
-
-</script>
+<script src="script.js"></script>
 </body>
 </html>
