@@ -170,6 +170,7 @@
     <input type="text" class="panel-input" id="sc-url-input" style="margin-top:0" placeholder="Dán link SoundCloud / playlist…" data-i18n-ph="scPh" onkeydown="if(event.key==='Enter')loadSC()">
     <button class="small-btn" onclick="loadSC()" data-i18n="playMusic">Phát nhạc</button>
   </div>
+  <div id="music-iframe-stage"></div>
   <div id="music-tab-local" style="display:none;">
     <div id="local-media-drop-zone" class="drop-zone-alt" onclick="document.getElementById('local-media-input').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleLocalMediaDrop(event)">
       <span data-i18n="mediaDropZone">Kéo thả nhạc/video hoặc thư mục vào đây</span><br>
@@ -207,7 +208,9 @@
     <div id="local-track-list" data-empty="Chưa có bài nào được thêm"></div>
   </div>
 </div>
-<div id="yt-frame-wrap" aria-hidden="true"><iframe id="yt-iframe" allowfullscreen allow="autoplay; encrypted-media"></iframe></div>
+<div id="music-iframe-dock" aria-hidden="true">
+  <div id="yt-frame-wrap"><iframe id="yt-iframe" allowfullscreen allow="autoplay; encrypted-media"></iframe></div>
+</div>
 
 <!-- Notes Panel -->
 <div class="panel" id="notes-panel">

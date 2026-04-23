@@ -814,9 +814,26 @@ function applyYtBg() { const url = document.getElementById('yt-bg-input').value.
 function clearYtBg() { document.getElementById('yt-bg-iframe').src = ''; document.getElementById('yt-bg-wrap').classList.remove('active'); document.getElementById('yt-bg-input').value = ''; syncBackgroundLayersVisibility(); savePrefs(); }
 
 /* ── MUSIC TABS ── */
-function switchMusicTab(tab, btn) { document.querySelectorAll('.music-tab').forEach(b => b.classList.remove('active')); btn.classList.add('active'); document.getElementById('music-tab-yt').style.display = tab === 'yt' ? 'block' : 'none'; document.getElementById('music-tab-sc').style.display = tab === 'sc' ? 'block' : 'none'; document.getElementById('music-tab-local').style.display = tab === 'local' ? 'block' : 'none'; }
-function loadYT() { const url = document.getElementById('yt-url-input').value.trim(); if (!url) return; const iframe = document.getElementById('yt-iframe'); const wrap = document.getElementById('yt-frame-wrap'); const normalized = url.replace('music.youtube.com', 'www.youtube.com'); const listMatch = normalized.match(/[?&]list=([^#&?\s]+)/); const videoMatch = normalized.match(/(?:youtu\.be\/|[?&]v=)([^#&?\s]{11})/); let src = ''; if (videoMatch && listMatch) { src = `https://www.youtube.com/embed/${videoMatch[1]}?list=${listMatch[1]}&autoplay=1&rel=0&modestbranding=1`; } else if (listMatch) { src = `https://www.youtube.com/embed/videoseries?list=${listMatch[1]}&autoplay=1&rel=0&modestbranding=1`; } else if (videoMatch) { src = `https://www.youtube.com/embed/${videoMatch[1]}?autoplay=1&loop=1&playlist=${videoMatch[1]}&rel=0&modestbranding=1`; } else { showNotif('!', t('errorTitle'), t('errYt'), 'error'); return; } iframe.src = src; wrap.classList.add('visible'); }
-function loadSC() { const url = document.getElementById('sc-url-input').value.trim(); if (!url) return; if (!url.includes('soundcloud.com')) { showNotif('!', t('errorTitle'), t('errSc'), 'error'); return; } const iframe = document.getElementById('yt-iframe'); const wrap = document.getElementById('yt-frame-wrap'); const encoded = encodeURIComponent(url); iframe.src = `https://w.soundcloud.com/player/?url=${encoded}&auto_play=true&hide_related=true&show_comments=false&show_user=true&show_reposts=false&visual=true`; wrap.classList.add('visible'); }
+function hasMusicEmbedLoaded() { return !!document.getElementById('yt-iframe')?.src; }
+function syncMusicEmbedHost() {
+  const wrap = document.getElementById('yt-frame-wrap');
+  const stage = document.getElementById('music-iframe-stage');
+  const dock = document.getElementById('music-iframe-dock');
+  const panel = document.getElementById('music-panel');
+  if (!wrap || !stage || !dock || !panel) return;
+  const linkTabOpen = document.getElementById('music-tab-yt').style.display !== 'none' || document.getElementById('music-tab-sc').style.display !== 'none';
+  const shouldShowPreview = panel.classList.contains('open') && linkTabOpen && hasMusicEmbedLoaded();
+  if (shouldShowPreview) {
+    if (wrap.parentElement !== stage) stage.appendChild(wrap);
+    panel.classList.add('has-embed-preview');
+  } else {
+    if (wrap.parentElement !== dock) dock.appendChild(wrap);
+    panel.classList.remove('has-embed-preview');
+  }
+}
+function switchMusicTab(tab, btn) { document.querySelectorAll('.music-tab').forEach(b => b.classList.remove('active')); btn.classList.add('active'); document.getElementById('music-tab-yt').style.display = tab === 'yt' ? 'block' : 'none'; document.getElementById('music-tab-sc').style.display = tab === 'sc' ? 'block' : 'none'; document.getElementById('music-tab-local').style.display = tab === 'local' ? 'block' : 'none'; syncMusicEmbedHost(); }
+function loadYT() { const url = document.getElementById('yt-url-input').value.trim(); if (!url) return; const iframe = document.getElementById('yt-iframe'); const wrap = document.getElementById('yt-frame-wrap'); const normalized = url.replace('music.youtube.com', 'www.youtube.com'); const listMatch = normalized.match(/[?&]list=([^#&?\s]+)/); const videoMatch = normalized.match(/(?:youtu\.be\/|[?&]v=)([^#&?\s]{11})/); let src = ''; if (videoMatch && listMatch) { src = `https://www.youtube.com/embed/${videoMatch[1]}?list=${listMatch[1]}&autoplay=1&rel=0&modestbranding=1`; } else if (listMatch) { src = `https://www.youtube.com/embed/videoseries?list=${listMatch[1]}&autoplay=1&rel=0&modestbranding=1`; } else if (videoMatch) { src = `https://www.youtube.com/embed/${videoMatch[1]}?autoplay=1&loop=1&playlist=${videoMatch[1]}&rel=0&modestbranding=1`; } else { showNotif('!', t('errorTitle'), t('errYt'), 'error'); return; } iframe.src = src; wrap.classList.add('visible'); syncMusicEmbedHost(); }
+function loadSC() { const url = document.getElementById('sc-url-input').value.trim(); if (!url) return; if (!url.includes('soundcloud.com')) { showNotif('!', t('errorTitle'), t('errSc'), 'error'); return; } const iframe = document.getElementById('yt-iframe'); const wrap = document.getElementById('yt-frame-wrap'); const encoded = encodeURIComponent(url); iframe.src = `https://w.soundcloud.com/player/?url=${encoded}&auto_play=true&hide_related=true&show_comments=false&show_user=true&show_reposts=false&visual=true`; wrap.classList.add('visible'); syncMusicEmbedHost(); }
 
 let localMediaLibrary = [];
 let localMediaSearch = '';
@@ -1055,6 +1072,7 @@ function togglePanel(id, btn) {
     closeAllPanels(() => {
       panel.classList.add('open');
       if (btn) btn.classList.add('active');
+      if (id === 'music-panel') syncMusicEmbedHost();
       gsap.fromTo(panel, {opacity: 0, y: 10, scale: 0.97}, {opacity: 1, y: 0, scale: 1, duration: 0.3, ease: 'back.out(1.5)'});
     });
   } else {
@@ -1070,6 +1088,7 @@ function closePanel(id, btnId) {
     opacity: 0, y: 10, scale: 0.98, duration: 0.2, ease: 'power2.in',
     onComplete: () => {
       panel.classList.remove('open');
+      if (id === 'music-panel') syncMusicEmbedHost();
       gsap.set(panel, {clearProps: "all"}); 
     }
   });
@@ -1081,7 +1100,7 @@ function closeAllPanels(onCompleteCallback) {
     panelsOpen = true;
     gsap.to(p, {
       opacity: 0, y: 10, scale: 0.98, duration: 0.2, ease: 'power2.in',
-      onComplete: () => { p.classList.remove('open'); gsap.set(p, {clearProps: "all"}); }
+      onComplete: () => { p.classList.remove('open'); if (p.id === 'music-panel') syncMusicEmbedHost(); gsap.set(p, {clearProps: "all"}); }
     });
   });
   document.querySelectorAll('.tool-btn, .todo-nav-btn').forEach(b => b.classList.remove('active'));
@@ -1303,6 +1322,7 @@ function openFanPanel(panelId, fanBtn) {
   const panel = document.getElementById(panelId); 
   if (!panel.classList.contains('open')) { 
     panel.classList.add('open'); if (fanBtn) fanBtn.classList.add('panel-active'); 
+    if (panelId === 'music-panel') syncMusicEmbedHost();
     gsap.fromTo(panel, {opacity: 0, y: 10, scale: 0.97}, {opacity: 1, y: 0, scale: 1, duration: 0.3, ease: 'back.out(1.5)'});
   } else { 
     closePanel(panelId, fanBtn ? fanBtn.id : null); 
@@ -1412,6 +1432,7 @@ updateLocalPlayButton();
 updateDynamicTooltips();
 syncFloatingPlayerState();
 syncBackgroundLayersVisibility();
+syncMusicEmbedHost();
 initBgSlideshow();
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(startIntro).catch(startIntro);
 else startIntro();
