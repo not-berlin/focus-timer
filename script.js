@@ -405,10 +405,10 @@ function updateDocumentTitle(overrideTime) {
   if (mode === 'clock') {
     const now = new Date();
     const currentTime = overrideTime || `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-    title = `{currentTime}`;
+    title = `${currentTime}`;
   } else if (mode === 'countdown') {
     const remaining = overrideTime || (currentSecs > 0 ? document.getElementById('time-display')?.textContent?.trim() || '00:00' : '00:00:00');
-    title = `$Focus for ${remaining}`;
+    title = `Focus for ${remaining}`;
   } else if (mode === 'pomodoro') {
     const remaining = overrideTime || (document.getElementById('time-display')?.textContent?.trim() || `${pad(settings['pomo-work'])}:00`);
     title = `${getPomodoroTitleLabel()}: ${remaining}`;
