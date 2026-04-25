@@ -63,6 +63,7 @@ const TRANS = {
     notifBreakMsg:'Tâm trí tươi mới — hãy bước vào hiệp tiếp theo.',
     notifLongBreak:'\n\nBạn xứng đáng với một giải lao dài.',
     notifDoneTitle:'Hoàn thành!', wordUnit:' từ',
+    titleClock:'Giờ hiện tại', titleCountdown:'Đếm ngược', titlePomoRound:'Hiệp {n}', titlePomoShort:'Nghỉ ngắn', titlePomoLong:'Nghỉ dài',
     settTouchMode:'Chế độ chạm', settTouchModeSub:'chạm = bắt/dừng · chạm×2 = đặt lại',
     touchHintStr:'chạm = bắt đầu/dừng · chạm×2 = đặt lại',
     todoEmpty: 'Bạn có việc gì cần làm không?', taskPending: 'Còn {n} việc cần làm',
@@ -133,6 +134,7 @@ const TRANS = {
     notifPomoTitle:'Round {n} done!', notifBreakDone:'Break over!',
     notifBreakMsg:'Fresh mind — step into the next round.', notifLongBreak:'\n\nYou deserve a long break.',
     notifDoneTitle:'Done!', wordUnit:' words',
+    titleClock:'Current Time', titleCountdown:'Countdown', titlePomoRound:'Round {n}', titlePomoShort:'Short Break', titlePomoLong:'Long Break',
     settTouchMode:'Touch Mode', settTouchModeSub:'tap = start/pause · 2 taps = reset',
     touchHintStr:'tap = start/pause · 2 taps = reset',
     todoEmpty: 'Anything else to do?', taskPending: '{n} tasks left',
@@ -173,6 +175,7 @@ function applyLang() {
   updateLocalMediaMeta();
   updateLocalPlayButton();
   setLocalRepeatLabel();
+  updateDocumentTitle();
   updateDynamicTooltips(); 
   updateSoundUi(); 
   updateNavCountdown(); 
@@ -392,6 +395,26 @@ function updateQuoteVisibility() {
   const hideForCountdown = mode === 'countdown' && (running || currentSecs > 0);
   document.body.classList.toggle('quote-muted', !!settings['hide-quote-auto'] && (clockDimOn || hideForCountdown));
 }
+function getPomodoroTitleLabel() {
+  if (pomoSession === 2) return t('titlePomoLong');
+  if (pomoSession === 1) return t('titlePomoShort');
+  return t('titlePomoRound', { n: pomoCount + 1 });
+}
+function updateDocumentTitle(overrideTime) {
+  let title = 'Focus';
+  if (mode === 'clock') {
+    const now = new Date();
+    const currentTime = overrideTime || `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    title = `${t('titleClock')}: ${currentTime}`;
+  } else if (mode === 'countdown') {
+    const remaining = overrideTime || (currentSecs > 0 ? document.getElementById('time-display')?.textContent?.trim() || '00:00' : '00:00:00');
+    title = `${t('titleCountdown')}: ${remaining}`;
+  } else if (mode === 'pomodoro') {
+    const remaining = overrideTime || (document.getElementById('time-display')?.textContent?.trim() || `${pad(settings['pomo-work'])}:00`);
+    title = `${getPomodoroTitleLabel()}: ${remaining}`;
+  }
+  document.title = title;
+}
 renderQuote(false);
 document.getElementById('quote-box').addEventListener('click', () => { quoteShowMode = quoteShowMode === 'quote' ? 'mindset' : 'quote'; renderQuote(true); });
 quoteInterval = setInterval(() => { quoteIdx++; renderQuote(true); }, 20000);
@@ -451,9 +474,10 @@ function render() {
   }
   updateTouchHint();
   updateQuoteVisibility();
+  updateDocumentTitle();
 }
 
-function setTimeDisplay(str) { const td = document.getElementById('time-display'); if (str !== lastTimeStr) { td.classList.remove('tick'); void td.offsetWidth; td.classList.add('tick'); lastTimeStr = str; } td.innerHTML = str.replace(/:/g, '<span class="time-colon">:</span>'); document.getElementById('fp-time').innerHTML = str.replace(/:/g, '<span style="opacity:0.7">:</span>'); if (pipWindow) { const pipTime = pipWindow.document.getElementById('fp-time'); if (pipTime) pipTime.innerHTML = str.replace(/:/g, '<span style="opacity:0.7">:</span>'); const pipMode = pipWindow.document.getElementById('fp-mode'); if (pipMode) pipMode.textContent = document.getElementById('fp-mode').textContent; } }
+function setTimeDisplay(str) { const td = document.getElementById('time-display'); if (str !== lastTimeStr) { td.classList.remove('tick'); void td.offsetWidth; td.classList.add('tick'); lastTimeStr = str; } td.innerHTML = str.replace(/:/g, '<span class="time-colon">:</span>'); document.getElementById('fp-time').innerHTML = str.replace(/:/g, '<span style="opacity:0.7">:</span>'); if (pipWindow) { const pipTime = pipWindow.document.getElementById('fp-time'); if (pipTime) pipTime.innerHTML = str.replace(/:/g, '<span style="opacity:0.7">:</span>'); const pipMode = pipWindow.document.getElementById('fp-mode'); if (pipMode) pipMode.textContent = document.getElementById('fp-mode').textContent; } updateDocumentTitle(str); }
 
 function updateClock() { 
   const now = new Date(); const str = pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds()); setTimeDisplay(str); 
@@ -462,17 +486,18 @@ function updateClock() {
   document.getElementById('mode-label').textContent = now.toLocaleDateString(locale, options); 
   document.getElementById('fp-mode').textContent = lang === 'en' ? 'current time' : 'giờ hiện tại'; 
   if (now.getMinutes() === 0 && now.getSeconds() === 0) { updateGreeting(); } 
+  updateDocumentTitle(str);
 }
 
 function renderPomoDots() { const dots = document.getElementById('pomo-dots'); dots.innerHTML = ''; for (let i = 0; i < 4; i++) { const d = document.createElement('div'); d.className = 'pomo-dot' + (i < pomoCount % 4 ? ' done' : ''); dots.appendChild(d); } }
 
-function startCountdown() { const h = parseInt(document.getElementById('input-h').value) || 0; const m = parseInt(document.getElementById('input-m').value) || 0; const s = parseInt(document.getElementById('input-s').value) || 0; totalSecs = h * 3600 + m * 60 + s; if (totalSecs <= 0) return; currentSecs = totalSecs; document.getElementById('countdown-input').style.display = 'none'; document.getElementById('sub-label').textContent = t('countingSub'); document.getElementById('controls').innerHTML = `<button class="ctrl-btn" onclick="pauseResume()" id="pause-btn">${t('pause')}</button><button class="ctrl-btn" onclick="stop()">${t('stop')}</button>`; running = true; document.getElementById('time-display').classList.add('running'); setBgFocus(true); document.body.classList.add('timer-running'); closeAllPanels(); timerInterval = setInterval(tickCountdown, 1000); document.getElementById('fp-mode').textContent = t('fpCountdown'); updateTouchHint(); updateQuoteVisibility(); }
+function startCountdown() { const h = parseInt(document.getElementById('input-h').value) || 0; const m = parseInt(document.getElementById('input-m').value) || 0; const s = parseInt(document.getElementById('input-s').value) || 0; totalSecs = h * 3600 + m * 60 + s; if (totalSecs <= 0) return; currentSecs = totalSecs; document.getElementById('countdown-input').style.display = 'none'; document.getElementById('sub-label').textContent = t('countingSub'); document.getElementById('controls').innerHTML = `<button class="ctrl-btn" onclick="pauseResume()" id="pause-btn">${t('pause')}</button><button class="ctrl-btn" onclick="stop()">${t('stop')}</button>`; running = true; document.getElementById('time-display').classList.add('running'); displayCountdownTime(currentSecs); setBgFocus(true); document.body.classList.add('timer-running'); closeAllPanels(); timerInterval = setInterval(tickCountdown, 1000); document.getElementById('fp-mode').textContent = t('fpCountdown'); updateTouchHint(); updateQuoteVisibility(); updateDocumentTitle(); }
 function tickCountdown() { currentSecs--; if (currentSecs <= 0) { currentSecs = 0; setTimeDisplay('00:00'); clearInterval(timerInterval); running = false; setBgFocus(false); document.body.classList.remove('timer-running'); document.getElementById('time-display').classList.remove('running','warning'); recordSession('countdown', totalSecs); updateQuoteVisibility(); const msgArr = t('msgComplete'); showNotif('◇', t('notifDoneTitle'), msgArr[Math.floor(Math.random()*msgArr.length)], 'success'); return; } if (currentSecs <= 10) document.getElementById('time-display').classList.add('warning'); displayCountdownTime(currentSecs); updateQuoteVisibility(); }
 function displayCountdownTime(s) { const h = Math.floor(s / 3600); const m = Math.floor((s % 3600) / 60); const sec = s % 60; setTimeDisplay(h > 0 ? pad(h) + ':' + pad(m) + ':' + pad(sec) : pad(m) + ':' + pad(sec)); }
 
 function startPomo() { pomoSession = 0; startPomoWork(); }
-function startPomoWork() { pomoSession = 0; currentSecs = settings['pomo-work'] * 60; document.getElementById('sub-label').textContent = t('focusSub', {n: pomoCount + 1}); document.getElementById('break-badge').style.display = 'none'; document.getElementById('controls').innerHTML = `<button class="ctrl-btn" onclick="pauseResume()" id="pause-btn">${t('pause')}</button><button class="ctrl-btn" onclick="stop()">${t('stop')}</button>`; running = true; document.getElementById('time-display').classList.add('running'); setBgFocus(true); document.body.classList.add('timer-running'); closeAllPanels(); timerInterval = setInterval(tickPomo, 1000); document.getElementById('fp-mode').textContent = t('fpFocus'); updateTouchHint(); updateQuoteVisibility(); }
-function startPomoBreak(long) { pomoSession = long ? 2 : 1; currentSecs = (long ? settings['pomo-long'] : settings['pomo-break']) * 60; document.getElementById('sub-label').textContent = long ? t('longBreakSub') : t('shortBreakSub'); document.getElementById('break-badge').style.display = 'block'; document.getElementById('time-display').classList.remove('running','warning'); document.getElementById('controls').innerHTML = `<button class="ctrl-btn" onclick="pauseResume()" id="pause-btn">${t('pause')}</button><button class="ctrl-btn" onclick="stop()">${t('stop')}</button>`; setBgFocus(false); running = true; document.body.classList.add('timer-running'); closeAllPanels(); timerInterval = setInterval(tickPomo, 1000); document.getElementById('fp-mode').textContent = t('fpBreak'); updateTouchHint(); updateQuoteVisibility(); }
+function startPomoWork() { pomoSession = 0; currentSecs = settings['pomo-work'] * 60; document.getElementById('sub-label').textContent = t('focusSub', {n: pomoCount + 1}); document.getElementById('break-badge').style.display = 'none'; document.getElementById('controls').innerHTML = `<button class="ctrl-btn" onclick="pauseResume()" id="pause-btn">${t('pause')}</button><button class="ctrl-btn" onclick="stop()">${t('stop')}</button>`; running = true; document.getElementById('time-display').classList.add('running'); setTimeDisplay(pad(Math.floor(currentSecs / 60)) + ':' + pad(currentSecs % 60)); setBgFocus(true); document.body.classList.add('timer-running'); closeAllPanels(); timerInterval = setInterval(tickPomo, 1000); document.getElementById('fp-mode').textContent = t('fpFocus'); updateTouchHint(); updateQuoteVisibility(); updateDocumentTitle(); }
+function startPomoBreak(long) { pomoSession = long ? 2 : 1; currentSecs = (long ? settings['pomo-long'] : settings['pomo-break']) * 60; document.getElementById('sub-label').textContent = long ? t('longBreakSub') : t('shortBreakSub'); document.getElementById('break-badge').style.display = 'block'; document.getElementById('time-display').classList.remove('running','warning'); setTimeDisplay(pad(Math.floor(currentSecs / 60)) + ':' + pad(currentSecs % 60)); document.getElementById('controls').innerHTML = `<button class="ctrl-btn" onclick="pauseResume()" id="pause-btn">${t('pause')}</button><button class="ctrl-btn" onclick="stop()">${t('stop')}</button>`; setBgFocus(false); running = true; document.body.classList.add('timer-running'); closeAllPanels(); timerInterval = setInterval(tickPomo, 1000); document.getElementById('fp-mode').textContent = t('fpBreak'); updateTouchHint(); updateQuoteVisibility(); updateDocumentTitle(); }
 function tickPomo() { currentSecs--; setTimeDisplay(pad(Math.floor(currentSecs/60)) + ':' + pad(currentSecs%60)); if (currentSecs <= 10 && pomoSession === 0) document.getElementById('time-display').classList.add('warning'); if (currentSecs <= 0) { clearInterval(timerInterval); running = false; document.getElementById('time-display').classList.remove('warning'); if (pomoSession === 0) { pomoCount++; renderPomoDots(); setBgFocus(false); recordSession('pomodoro', settings['pomo-work'] * 60); const isLong = pomoCount % 4 === 0; updateQuoteVisibility(); const msgArr = t('msgPomo'); showNotif( POMO_ICONS[pomoCount % POMO_ICONS.length], t('notifPomoTitle', {n: pomoCount}), msgArr[Math.floor(Math.random()*msgArr.length)] + (isLong ? t('notifLongBreak') : ''), 'success' ); document.getElementById('notif-dismiss').onclick = () => { dismissNotif(); startPomoBreak(isLong); }; } else { document.getElementById('break-badge').style.display = 'none'; updateQuoteVisibility(); showNotif('✦', t('notifBreakDone'), t('notifBreakMsg'), 'break'); document.getElementById('notif-dismiss').onclick = () => { dismissNotif(); startPomoWork(); }; } } }
 
 function pauseResume() { const btn = document.getElementById('pause-btn'); if (running) { clearInterval(timerInterval); running = false; if (btn) btn.textContent = t('resume'); setBgFocus(false); document.body.classList.remove('timer-running'); } else { running = true; if (btn) btn.textContent = t('pause'); setBgFocus(true); document.body.classList.add('timer-running'); if (mode === 'countdown') timerInterval = setInterval(tickCountdown, 1000); else timerInterval = setInterval(tickPomo, 1000); } updateTouchHint(); updateQuoteVisibility(); }
