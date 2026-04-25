@@ -63,7 +63,7 @@ const TRANS = {
     notifBreakMsg:'Tâm trí tươi mới — hãy bước vào hiệp tiếp theo.',
     notifLongBreak:'\n\nBạn xứng đáng với một giải lao dài.',
     notifDoneTitle:'Hoàn thành!', wordUnit:' từ',
-    titleClock:'Giờ hiện tại', titleCountdown:'Đếm ngược', titlePomoRound:'Hiệp {n}', titlePomoShort:'Nghỉ ngắn', titlePomoLong:'Nghỉ dài',
+    titlePomoRound:'Hiệp {n}', titlePomoShort:'Nghỉ ngắn', titlePomoLong:'Nghỉ dài',
     settTouchMode:'Chế độ chạm', settTouchModeSub:'chạm = bắt/dừng · chạm×2 = đặt lại',
     touchHintStr:'chạm = bắt đầu/dừng · chạm×2 = đặt lại',
     todoEmpty: 'Bạn có việc gì cần làm không?', taskPending: 'Còn {n} việc cần làm',
@@ -134,7 +134,7 @@ const TRANS = {
     notifPomoTitle:'Round {n} done!', notifBreakDone:'Break over!',
     notifBreakMsg:'Fresh mind — step into the next round.', notifLongBreak:'\n\nYou deserve a long break.',
     notifDoneTitle:'Done!', wordUnit:' words',
-    titleClock:'Current Time', titleCountdown:'Countdown', titlePomoRound:'Round {n}', titlePomoShort:'Short Break', titlePomoLong:'Long Break',
+    titlePomoRound:'Round {n}', titlePomoShort:'Short Break', titlePomoLong:'Long Break',
     settTouchMode:'Touch Mode', settTouchModeSub:'tap = start/pause · 2 taps = reset',
     touchHintStr:'tap = start/pause · 2 taps = reset',
     todoEmpty: 'Anything else to do?', taskPending: '{n} tasks left',
@@ -405,10 +405,10 @@ function updateDocumentTitle(overrideTime) {
   if (mode === 'clock') {
     const now = new Date();
     const currentTime = overrideTime || `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-    title = `${t('titleClock')}: ${currentTime}`;
+    title = `{currentTime}`;
   } else if (mode === 'countdown') {
     const remaining = overrideTime || (currentSecs > 0 ? document.getElementById('time-display')?.textContent?.trim() || '00:00' : '00:00:00');
-    title = `${t('titleCountdown')}: ${remaining}`;
+    title = `$Focus for ${remaining}`;
   } else if (mode === 'pomodoro') {
     const remaining = overrideTime || (document.getElementById('time-display')?.textContent?.trim() || `${pad(settings['pomo-work'])}:00`);
     title = `${getPomodoroTitleLabel()}: ${remaining}`;
